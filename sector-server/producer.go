@@ -18,6 +18,7 @@ type Medicion struct {
 }
 
 func main() {
+	time.Sleep(time.Second)
 	conn, err := amqp.Dial("amqp://queue:5672/")
 	if err != nil {
 		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
