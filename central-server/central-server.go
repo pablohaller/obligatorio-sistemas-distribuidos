@@ -3,7 +3,7 @@
 package main
 
 import (
-	"encoding/json"
+	_ "encoding/json"
 	"database/sql"
 	"net/http"
 	"time"
@@ -13,25 +13,19 @@ import (
 	"github.com/streadway/amqp"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
+	"bytes"
 )
-
-/* ad
-
- GET /Suscribe {queue: "name:5672"}
- Levantar hilo que ejecute main.
- 
-
-	
-Address */
 
 var DB_CONN_STRING = os.Getenv("DB_CONN_STRING")
 
 type Medicion struct {
-	Datetime time.Time
-    Sensor string
-	Sector string
-    Presion int
+    Datetime time.Time `json:"Datetime" time_format:"2006-01-02 15:04:05"`
+    Sensor   string    `json:"Sensor"`
+    Sector   string    `json:"Sector"`
+    Presion  int       `json:"Presion"`
 }
+
+var consumiendo = false
 
 func main() {
 	time.Sleep(time.Second)
@@ -43,8 +37,17 @@ func main() {
 	
 	r := gin.Default()
 
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, "Pong!")
+	r.GET("/healthcheck", func(c *gin.Context) {
+		c.JSON(http.StatusOK, nil)
+		
+	})
+
+	r.GET("/Sector/Suscribe", func(c *gin.Context) {
+		c.JSON(http.StatusOK, "queue:5672")
+		if !consumiendo {
+			consumiendo = true
+			go consumer("queue:5672")
+		}
 	})
 
 	r.GET("/Mediciones", func(c *gin.Context) {
@@ -82,53 +85,53 @@ func main() {
 	})
 	
 
-	r.POST("/Mediciones", func(c *gin.Context){
+	r.POST("/Mediciones", func(c *gin.Context) {
 		var medicion Medicion
-
-        // Deserializar el body JSON en la struct Medicion
-        if err := c.ShouldBindJSON(&medicion); err != nil {
-            c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-            return
-        }
-
-        // Insertar en la base de datos
-        fmt.Println(fmt.Sprint(medicion))
+	
+		// Deserializar el body JSON en la struct Medicion
+		if err := c.ShouldBindJSON(&medicion); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+	
+		// Insertar en la base de datos
+		fmt.Println(fmt.Sprint(medicion))
+	
 		// Preparar la sentencia SQL de inserción
-		stmt, err := db.Prepare("INSERT INTO mediciones(datetime, sensor, sector, presion) VALUES($1, $2, $3, $4)")
+		stmt, err := db.Prepare("INSERT INTO mediciones(datetime, sensor, sector, presion) VALUES ($1, $2, $3, $4)")
 		if err != nil {
-			fmt.Println("Error al preparar la sentencia SQL:", err)
-			c.AbortWithStatus(http.StatusInternalServerError)
+			log.Printf("Error al preparar la sentencia SQL: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo preparar el statement de la insercion"})
 			return
 		}
 		defer stmt.Close()
-
+	
 		// Ejecutar la sentencia SQL con los valores de la medición
 		_, err = stmt.Exec(medicion.Datetime, medicion.Sensor, medicion.Sector, medicion.Presion)
 		if err != nil {
-			fmt.Println("Error al ejecutar la sentencia SQL:", err)
-			c.AbortWithStatus(http.StatusInternalServerError)
+			log.Printf("Error al ejecutar la sentencia SQL: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo insertar la medición en la base de datos"})
 			return
 		}
-			
-        c.Status(http.StatusOK)
-		return 
+	
+		c.Status(http.StatusOK)
+		return
 	})
-
-
 	r.Run() // listen and serve on 0.0.0.0:8080
 }
 
 // Thread
-func consumer() {
-	/* //Create DB connection
-	db, err := sql.Open("postgres", DB_CONN_STRING)
-	if err != nil {
-		log.Fatal(err)
-	} */
+func consumer(queue string) {
 
-	conn, err := amqp.Dial("amqp://queue:5672/")
-	if err != nil {
-		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
+	var conn *amqp.Connection
+	var err error
+
+	for conn == nil {
+		conn, err = amqp.Dial("amqp://" + queue + "/")
+		if err != nil {
+			log.Printf("Failed to connect to RabbitMQ: %v", err)
+			time.Sleep(5 * time.Second) // wait 5 seconds before retrying
+		}
 	}
 	defer conn.Close()
 
@@ -167,13 +170,22 @@ func consumer() {
 
 	go func() {
 		for d := range msgs {
-			var medicion Medicion
-			err := json.Unmarshal(d.Body, &medicion)
-			if err != nil {
-				log.Fatalf("Failed to unmarshal medicion: %s", err)
-			}
+			// Crear una solicitud HTTP POST con el cuerpo JSON y el encabezado "Content-Type: application/json"
+			body := bytes.NewBuffer(d.Body)
 
-			fmt.Println("Fecha y hora: " + fmt.Sprint(medicion.Datetime) + " - Sensor: " + medicion.Sensor + " - Sector: " + medicion.Sector + " - Medicion: " + fmt.Sprint(medicion.Presion))
+			req, err := http.NewRequest("POST", "http://central-server:8080/Mediciones", body)
+			req.Header.Set("Content-Type", "application/json")
+
+			// Enviar la solicitud y capturar la respuesta y el posible error
+			client := &http.Client{}
+			resp, err := client.Do(req)
+			if err != nil {
+				log.Fatalf("Error al pegar al endpoint de mediciones: %v", err)
+			}
+			defer resp.Body.Close()
+
+			// Imprimir el código de estado de la respuesta
+			fmt.Println(resp.StatusCode)
 		}
 	}()
 

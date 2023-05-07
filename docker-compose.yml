@@ -21,10 +21,10 @@ services:
     environment:
       - QUEUE_HOST=queue
       - QUEUE_NAME=queue
-      - DB_CONN_STRING = postgresql://root:obligatorioequipo3@central-db:5432/test?sslmode=disable
+      - DB_CONN_STRING=postgresql://root:obligatorioequipo3@central-db:5432/central-db?sslmode=disable
     depends_on:
       queue:
-       condition: service_healthy
+        condition: service_healthy
       central-db:
         condition: service_healthy
     ports:
