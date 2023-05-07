@@ -1,0 +1,78 @@
+services:
+
+# Sector Server
+  sector-server-a:
+    build: ./sector-server
+    environment:
+      - QUEUE_HOST=queue
+      - QUEUE_NAME=queue
+    depends_on:
+      queue:
+        condition: service_healthy
+
+
+# Central Server
+
+  ## Server
+  central-server:
+    build: ./central-server
+    links:
+      - central-db
+    environment:
+      - QUEUE_HOST=queue
+      - QUEUE_NAME=queue
+      - DB_CONN_STRING = postgresql://root:obligatorioequipo3@central-db:5432/test?sslmode=disable
+    depends_on:
+      queue:
+       condition: service_healthy
+      central-db:
+        condition: service_healthy
+
+  ## Central DB
+  central-db:
+      image: postgres:13.1-alpine
+      environment:
+        POSTGRES_DB: central-db
+        POSTGRES_USER: root
+        POSTGRES_PASSWORD: obligatorioequipo3
+      healthcheck:
+        test: pg_isready -d central-db
+        interval: 10s
+        timeout: 30s
+        retries: 5
+        start_period: 80s 
+      volumes:
+        - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+# RabbitMQ Queues
+
+  queue:
+    image: rabbitmq:3-alpine
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    ports:
+      - "5672:5672"
+    expose:
+      - "5672"
+      
+   
+
+  # mongo:
+  #   image: mongo
+  #   restart: always
+  #   environment:
+  #     MONGO_INITDB_ROOT_USERNAME: root
+  #     MONGO_INITDB_ROOT_PASSWORD: example
+
+  # mongo-express:
+  #   image: mongo-express
+  #   restart: always
+  #   ports:
+  #     - 8081:8081
+  #   environment:
+  #     ME_CONFIG_MONGODB_ADMINUSERNAME: root
+  #     ME_CONFIG_MONGODB_ADMINPASSWORD: example
+  #     ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
