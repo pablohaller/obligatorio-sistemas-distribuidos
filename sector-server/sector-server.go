@@ -117,5 +117,6 @@ func main() {
 			}
 
 		fmt.Printf("Message sent: %s", body)
+		time.Sleep(time.Second * 2)
 	}
 }

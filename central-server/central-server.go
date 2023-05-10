@@ -1,9 +1,7 @@
-// consumer.go
-
 package main
 
 import (
-	_ "encoding/json"
+	"encoding/json"
 	"database/sql"
 	"net/http"
 	"time"
@@ -17,6 +15,7 @@ import (
 )
 
 var DB_CONN_STRING = os.Getenv("DB_CONN_STRING")
+var MIRROR_DB_SERVER_HOST = os.Getenv("MIRROR_DB_SERVER_HOST")
 
 type Medicion struct {
     Datetime time.Time `json:"Datetime" time_format:"2006-01-02 15:04:05"`
@@ -113,13 +112,49 @@ func main() {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo insertar la medición en la base de datos"})
 			return
 		}
-	
+		
+		// Mandar a guardar en la base de datos réplica en un hilo.
+		go sendMirror(medicion)
+		
 		c.Status(http.StatusOK)
 		return
 	})
 	r.Run() // listen and serve on 0.0.0.0:8080
 }
 
+func sendMirror(med Medicion) {
+	clientHealth := &http.Client{}
+    req, _ := http.NewRequest("GET", "http://central-server:8080/healthcheck", nil)
+
+    for i:= 0 ; i < 3 ; i++ {
+        resp, err := clientHealth.Do(req)
+        if err != nil {
+            fmt.Println(err)
+        } else if resp.StatusCode == 200 {
+			body, err := json.Marshal(med)
+			if err != nil {
+				log.Fatalf("Error serializing medicion to JSON: %v", err)
+			}
+            // Crear HTTP Request al Mirror DB Server
+			req, error := http.NewRequest("POST", "http://" + MIRROR_DB_SERVER_HOST+":8080/Mediciones", bytes.NewBuffer(body) )
+			if error != nil {
+				log.Fatalf("Error al enviar request al Mirror DB Server: %v", error)
+				return
+			}
+			req.Header.Set("Content-Type", "application/json")
+			// Enviar la solicitud y capturar la respuesta y el posible error
+			client := &http.Client{}
+			resp, err := client.Do(req)
+			if err != nil {
+				log.Fatalf("Error al pegar al endpoint de mediciones: %v", err)
+			}
+			defer resp.Body.Close()
+            break
+        }
+        time.Sleep(time.Minute * 1) // espera 1 Minuto antes de volver a intentar
+    }
+	
+}
 // Thread
 func consumer(queue string) {
 
