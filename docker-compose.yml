@@ -4,12 +4,13 @@ services:
   sector-server-a:
     build: ./sector-server
     environment:
-      - QUEUE_HOST=queue
-      - QUEUE_NAME=queue
+      - QUEUE_HOST=queue1
+      - QUEUE_NAME=queue1
     depends_on:
       queue:
         condition: service_healthy
 
+###################################################################################################################
 
 # Central Server
 
@@ -21,12 +22,15 @@ services:
     environment:
       - QUEUE_HOST=queue
       - QUEUE_NAME=queue
-      - DB_CONN_STRING = postgresql://root:obligatorioequipo3@central-db:5432/test?sslmode=disable
+      - DB_CONN_STRING=postgresql://root:obligatorioequipo3@central-db:5432/central-db?sslmode=disable
+      - MIRROR_DB_SERVER_HOST=mirror-db-server
     depends_on:
       queue:
-       condition: service_healthy
+        condition: service_healthy
       central-db:
         condition: service_healthy
+    ports:
+      - "80:8080"
 
   ## Central DB
   central-db:
@@ -43,6 +47,41 @@ services:
         start_period: 80s 
       volumes:
         - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+###################################################################################################################
+
+# Mirror DB Server
+
+  ## Server
+  mirror-db-server:
+    build: ./mirror-db-server
+    links:
+      - mirror-backup-db
+    environment:
+      - DB_CONN_STRING=postgresql://root:obligatorioequipo3@mirror-backup-db:5432/mirror-backup-db?sslmode=disable
+    depends_on:
+      mirror-backup-db:
+        condition: service_healthy
+    ports:
+      - "81:8080"
+
+  ## Mirror Backup DB
+  mirror-backup-db:
+      image: postgres:13.1-alpine
+      environment:
+        POSTGRES_DB: mirror-backup-db
+        POSTGRES_USER: root
+        POSTGRES_PASSWORD: obligatorioequipo3
+      healthcheck:
+        test: pg_isready -d mirror-backup-db
+        interval: 10s
+        timeout: 30s
+        retries: 5
+        start_period: 80s 
+      volumes:
+        - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+###################################################################################################################
 
 # RabbitMQ Queues
 
