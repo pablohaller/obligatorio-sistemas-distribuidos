@@ -1,7 +1,7 @@
 package main
 
 import (
-	"encoding/json"
+	//"encoding/json"
 	"database/sql"
 	"net/http"
 	"time"
@@ -84,7 +84,7 @@ func main() {
 	})
 	
 
-	r.POST("/Mediciones", func(c *gin.Context) {
+	r.PUT("/Mediciones", func(c *gin.Context) {
 		var medicion Medicion
 	
 		// Deserializar el body JSON en la struct Medicion
@@ -114,7 +114,7 @@ func main() {
 		}
 		
 		// Mandar a guardar en la base de datos réplica en un hilo.
-		go sendMirror(medicion)
+		//go sendMirror(medicion)
 		
 		c.Status(http.StatusOK)
 		return
@@ -122,7 +122,7 @@ func main() {
 	r.Run() // listen and serve on 0.0.0.0:8080
 }
 
-func sendMirror(med Medicion) {
+/* func sendMirror(med Medicion) {
 	clientHealth := &http.Client{}
     req, _ := http.NewRequest("GET", "http://central-server:8080/healthcheck", nil)
 
@@ -136,7 +136,7 @@ func sendMirror(med Medicion) {
 				log.Fatalf("Error serializing medicion to JSON: %v", err)
 			}
             // Crear HTTP Request al Mirror DB Server
-			req, error := http.NewRequest("POST", "http://" + MIRROR_DB_SERVER_HOST+":8080/Mediciones", bytes.NewBuffer(body) )
+			req, error := http.NewRequest("PUT", "http://" + MIRROR_DB_SERVER_HOST+":8080/Mediciones", bytes.NewBuffer(body) )
 			if error != nil {
 				log.Fatalf("Error al enviar request al Mirror DB Server: %v", error)
 				return
@@ -154,7 +154,7 @@ func sendMirror(med Medicion) {
         time.Sleep(time.Minute * 1) // espera 1 Minuto antes de volver a intentar
     }
 	
-}
+} */
 // Thread
 func consumer(queue string) {
 
@@ -205,10 +205,10 @@ func consumer(queue string) {
 
 	go func() {
 		for d := range msgs {
-			// Crear una solicitud HTTP POST con el cuerpo JSON y el encabezado "Content-Type: application/json"
+			// Crear una solicitud HTTP PUT con el cuerpo JSON y el encabezado "Content-Type: application/json"
 			body := bytes.NewBuffer(d.Body)
 
-			req, err := http.NewRequest("POST", "http://central-server:8080/Mediciones", body)
+			req, err := http.NewRequest("PUT", "http://central-server:8080/Mediciones", body)
 			req.Header.Set("Content-Type", "application/json")
 
 			// Enviar la solicitud y capturar la respuesta y el posible error
