@@ -4,11 +4,22 @@ services:
   sector-server-a:
     build: ./sector-server
     environment:
+      - SECTOR_NAME=sector-server-a
       - QUEUE_HOST=queue1
       - QUEUE_NAME=queue1
     depends_on:
       queue:
         condition: service_healthy
+
+
+# Sector Sensor
+  sector-sensor-a:
+    build: ./sensor
+    environment:
+      - SECTOR_NAME=sector-server-a
+      - SENSOR_NAME=sensor-a
+    depends_on:
+      - sector-server-a
 
 ###################################################################################################################
 

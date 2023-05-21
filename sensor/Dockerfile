@@ -9,4 +9,4 @@ COPY . .
 RUN pip3 install -r requirements.txt
 
 #Ejecutamos nuestra app en docker
-ENTRYPOINT ["python3", "main.py"]
+ENTRYPOINT ["python3", "sensor.py"]
