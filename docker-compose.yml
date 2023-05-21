@@ -107,7 +107,19 @@ services:
       - "5672:5672"
     expose:
       - "5672"
-      
+#####################################################################################################################
+  
+  batch:
+      build: ./batch
+      environment:
+        - WEB-SERVER-HOST=web-server
+        #- MIRROR-DB-SERVER=mirror-db-server
+        - MIRROR-DB-SERVER=central-server
+      ports:
+        - '69:8080'
+      volumes:
+        - ./data:/app/data
+
    
 
   # mongo:
