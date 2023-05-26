@@ -110,7 +110,7 @@ services:
 #####################################################################################################################
   
   batch:
-      build: ./batch
+      build: ./batching
       environment:
         - WEB-SERVER-HOST=web-server
         #- MIRROR-DB-SERVER=mirror-db-server
