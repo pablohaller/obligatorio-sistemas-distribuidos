@@ -11,6 +11,13 @@ datasource db {
 }
 
 model Measures {
-  id   String @id @default(cuid())
-  data String
+  id         String  @id @default(cuid())
+  data       String
+  filtration Boolean @default(false)
+}
+
+model Users {
+  id       String @id @default(cuid())
+  mail     String
+  password String
 }
