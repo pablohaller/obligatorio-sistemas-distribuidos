@@ -44,3 +44,5 @@ npm prisma migrate dev
 	filtration: Boolean;
 }
 ```
+
+https://remaster.com/blog/next-auth-jwt-session

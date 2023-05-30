@@ -19,10 +19,10 @@ export async function POST(request: Request) {
   if (filtration) {
     const req = await fetch(`${process.env.NEXT_API_URL}/api/users`);
     const users = await req.json();
-    const mailingList = users.map(({ mail }: Users) => mail).join(",");
+    const mailingList = users.map(({ email }: Users) => email).join(",");
 
     const transporter = nodemailer.createTransport({
-      host: "smtp-mail.outlook.com", // hostname
+      host: "smtp-email.outlook.com", // hostname
       secure: false, // TLS requires secureConnection to be false
       port: 587, // port for secure SMTP
       tls: {
