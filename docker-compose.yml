@@ -57,7 +57,11 @@ services:
         retries: 5
         start_period: 80s 
       volumes:
-        - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+        - ./postgres-conf/init.sql:/docker-entrypoint-initdb.d/init.sql
+        - ./postgres-conf/postgres.conf:/etc/postgresql/postgresql.conf
+        - ./postgres-conf/pg_hba.conf:/etc/postgresql/pg_hba.conf
+      command: sh -c "docker-entrypoint.sh postgres && psql -U root -d central-db -f /docker-entrypoint-initdb.d/init.sql && pg_basebackup -D /tmp/postgresslave -S replication_slot_slave1 -X stream -P -U replicator -Fp -R"
+
 
 ###################################################################################################################
 
@@ -90,7 +94,7 @@ services:
         retries: 5
         start_period: 80s 
       volumes:
-        - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+        - ./postgres-conf/init.sql:/docker-entrypoint-initdb.d/init.sql
 
 ###################################################################################################################
 
@@ -109,16 +113,16 @@ services:
       - "5672"
 #####################################################################################################################
   
-  batch:
-      build: ./batching
-      environment:
-        - WEB-SERVER-HOST=web-server
-        #- MIRROR-DB-SERVER=mirror-db-server
-        - MIRROR-DB-SERVER=central-server
-      ports:
-        - '69:8080'
-      volumes:
-        - ./data:/app/data
+  # batch:
+  #     build: ./batching
+  #     environment:
+  #       - WEB-SERVER-HOST=web-server
+  #       #- MIRROR-DB-SERVER=mirror-db-server
+  #       - MIRROR-DB-SERVER=central-server
+  #     ports:
+  #       - '69:8080'
+  #     volumes:
+  #       - ./data:/app/data
 
    
 
