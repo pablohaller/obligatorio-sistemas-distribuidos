@@ -25,7 +25,12 @@ type Medicion struct {
     Presion  int       `json:"Presion"`
 }
 
-var consumiendo = false
+type Suscribe struct {
+    Sector   string    `json:"Sector"`
+    Queue    string    `json:"Queue"`
+}
+
+var consumiendo []string
 
 func main() {
 	time.Sleep(time.Second)
@@ -42,11 +47,28 @@ func main() {
 		
 	})
 
-	r.GET("/Sector/Suscribe", func(c *gin.Context) {
-		c.JSON(http.StatusOK, "queue:5672")
-		if !consumiendo {
-			consumiendo = true
-			go consumer("queue:5672")
+	r.POST("/Sector/Suscribe", func(c *gin.Context) {
+		var found bool
+		var suscribe Suscribe
+		if err := c.ShouldBindJSON(&suscribe); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		// Recorrer el array de strings
+		for _, str := range consumiendo {
+			// Comparar el elemento actual con el valor deseado
+			if str == suscribe.Sector {
+				// Se encontró el valor deseado
+				found = true
+				break
+			}
+		}
+		if !found {
+			go consumer(suscribe.Queue)
+			consumiendo = append(consumiendo, suscribe.Sector)
+			c.JSON(http.StatusCreated, suscribe.Queue)
+		}else{
+			c.JSON(http.StatusOK)
 		}
 	})
 

@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"github.com/gin-gonic/gin"
 	"os"
+	"bytes"
 )
 
 type Medicion struct {
@@ -23,6 +24,7 @@ type Medicion struct {
 }
 
 var SECTOR_NAME = os.Getenv("SECTOR_NAME")
+var QUEUE_HOST = os.Getenv("QUEUE_HOST")
 var channelQueue *amqp.Channel
 var queue amqp.Queue
 
@@ -43,8 +45,41 @@ func main() {
         }
         time.Sleep(time.Second * 5) // espera 5 segundos antes de volver a intentar
     }
+
+	queueName := QUEUE_HOST
+	var conn *amqp.Connection
+	var err error
+
+	for conn == nil {
+		conn, err = amqp.Dial("amqp://" + queueName + ":5672/")
+		if err != nil {
+			log.Printf("Failed to connect to RabbitMQ: %v", err)
+			time.Sleep(5 * time.Second) // wait 5 seconds before retrying
+		}
+	}
+	defer conn.Close()
+
+// continue with other code using `conn` object
+
+	channelQueue, err = conn.Channel()
+	if err != nil {
+		log.Fatalf("Failed to open a channel: %v", err)
+	}
+	defer channelQueue.Close()
+
+	queue, err = channelQueue.QueueDeclare(
+		"queue", // queue name
+		false,       // durable
+		false,       // delete when unused
+		false,       // exclusive
+		false,       // no-wait
+		nil,         // arguments
+	)
+	if err != nil {
+		log.Fatalf("Failed to declare a queue: %v", err)
+	}
 	
-	go getQueue()
+	go alertCentral()
 
 	r.PUT("/Medicion", func(c *gin.Context) {
 		var medicion Medicion
@@ -82,64 +117,31 @@ func main() {
 	r.Run() // listen and serve on 0.0.0.0:8080
 }
 
-func getQueue(){
+type Suscribe struct {
+    Sector   string    `json:"Sector"`
+    Queue    string    `json:"Queue"`
+}
+
+func alertCentral(){
 	for{
+
+		suscribe := Suscribe{
+			Queue:  QUEUE_HOST,
+			Sector: SECTOR_NAME,
+		}
+
+		// Convertir la estructura a JSON
+		jsonData, marshalerr := json.Marshal(suscribe)
+		if marshalerr != nil {
+			log.Fatal("Error al convertir la estructura a JSON:", marshalerr)
+		}
+
 		// suscribirse para obtener el nombre de la queue
-		req, http_err := http.NewRequest("GET", "http://central-server:8080/Sector/Suscribe", nil)
-		req.Header.Set("Content-Type", "application/json")
-
-		// Enviar la solicitud y capturar la respuesta y el posible error
-		client := &http.Client{}
-		resp, http_err := client.Do(req)
+		req, http_err := http.NewRequest("POST", "http://central-server:8080/Sector/Suscribe", bytes.NewBuffer(jsonData))
 		if http_err != nil {
-			log.Fatalf("Error al pegar al endpoint de mediciones: %v", http_err)
+			log.Fatal("Error al crear la solicitud:", http_err)
 		}
-		defer resp.Body.Close()
-
-		body, body_err := io.ReadAll(resp.Body)
-		if body_err != nil {
-			log.Fatalf("Error al leer el cuerpo de la respuesta: %v", body_err)
-		}
-
-		// Eliminar las barras diagonales
-		cleanBody, err1 := strconv.Unquote(string(body))
-		if err1 != nil {
-			log.Fatalf("Error al limpiar el cuerpo de la respuesta: %v", err1)
-		}
-
-		// Utilizar el cuerpo de respuesta limpio
-		queueName := cleanBody
-		var conn *amqp.Connection
-		var err error
-
-		for conn == nil {
-			conn, err = amqp.Dial("amqp://" + queueName + "/")
-			if err != nil {
-				log.Printf("Failed to connect to RabbitMQ: %v", err)
-				time.Sleep(5 * time.Second) // wait 5 seconds before retrying
-			}
-		}
-		defer conn.Close()
-
-	// continue with other code using `conn` object
-
-		channelQueue, err = conn.Channel()
-		if err != nil {
-			log.Fatalf("Failed to open a channel: %v", err)
-		}
-		defer channelQueue.Close()
-
-		queue, err = channelQueue.QueueDeclare(
-			"queue", // queue name
-			false,       // durable
-			false,       // delete when unused
-			false,       // exclusive
-			false,       // no-wait
-			nil,         // arguments
-		)
-		if err != nil {
-			log.Fatalf("Failed to declare a queue: %v", err)
-		}
+		req.Header.Set("Content-Type", "application/json")
 
 		// AGREGAR SI ES DESEADO EL MANDAR TODOS LOS DATOS GUARDADOS DE HACE 5 MINUTOS HASTA 
 		// AHORA DE MONGO DB

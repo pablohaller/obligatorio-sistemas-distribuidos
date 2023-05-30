@@ -5,10 +5,9 @@ services:
     build: ./sector-server
     environment:
       - SECTOR_NAME=sector-server-a
-      - QUEUE_HOST=queue1
-      - QUEUE_NAME=queue1
+      - QUEUE_HOST=queueA
     depends_on:
-      queue:
+      queueA:
         condition: service_healthy
 
 
@@ -31,12 +30,10 @@ services:
     links:
       - central-db
     environment:
-      - QUEUE_HOST=queue
-      - QUEUE_NAME=queue
       - DB_CONN_STRING=postgresql://root:obligatorioequipo3@central-db:5432/central-db?sslmode=disable
       - MIRROR_DB_SERVER_HOST=mirror-db-server
     depends_on:
-      queue:
+      queueA:
         condition: service_healthy
       central-db:
         condition: service_healthy
@@ -100,7 +97,7 @@ services:
 
 # RabbitMQ Queues
 
-  queue:
+  queueA:
     image: rabbitmq:3-alpine
     healthcheck:
       test: rabbitmq-diagnostics -q ping
