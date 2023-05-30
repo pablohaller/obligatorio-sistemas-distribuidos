@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     const mailingList = users.map(({ email }: Users) => email).join(",");
 
     const transporter = nodemailer.createTransport({
-      host: "smtp-email.outlook.com", // hostname
+      host: "smtp-mail.outlook.com", // hostname
       secure: false, // TLS requires secureConnection to be false
       port: 587, // port for secure SMTP
       tls: {
