@@ -2,17 +2,18 @@ package main
 
 import (
 	//"encoding/json"
+	"bytes"
 	"database/sql"
-	"net/http"
-	"time"
+	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
-	"github.com/streadway/amqp"
+	"strconv"
+	"time"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
-	"bytes"
-	"strconv"
+	"github.com/streadway/amqp"
 )
 
 var DB_CONN_STRING = os.Getenv("DB_CONN_STRING")
@@ -25,7 +26,12 @@ type Medicion struct {
     Presion  int       `json:"Presion"`
 }
 
-var consumiendo = false
+type Suscribe struct {
+    Sector   string    `json:"Sector"`
+    Queue    string    `json:"Queue"`
+}
+
+var consumiendo []string
 
 func main() {
 	time.Sleep(time.Second)
@@ -42,11 +48,30 @@ func main() {
 		
 	})
 
-	r.GET("/Sector/Suscribe", func(c *gin.Context) {
-		c.JSON(http.StatusOK, "queue:5672")
-		if !consumiendo {
-			consumiendo = true
-			go consumer("queue:5672")
+	r.POST("/Sector/Suscribe", func(c *gin.Context) {
+		var found bool
+		var suscribe Suscribe
+		if err := c.ShouldBindJSON(&suscribe); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		// Recorrer el array de strings
+		for _, str := range consumiendo {
+			// Comparar el elemento actual con el valor deseado
+			if str == suscribe.Sector {
+				// Se encontró el valor deseado
+				found = true
+				break
+			}
+		}
+		if !found {
+			go consumer(suscribe.Queue+ ":5672")
+			consumiendo = append(consumiendo, suscribe.Sector)
+			c.JSON(http.StatusCreated, suscribe.Queue)
+			log.Printf(suscribe.Sector + " se suscribio para ser consumido")
+		}else{
+			c.JSON(http.StatusOK, "Already consuming")
+			log.Printf(suscribe.Sector + " ya esta suscripto")
 		}
 	})
 
@@ -159,7 +184,7 @@ func main() {
 		}
 		
 		// Mandar a guardar en la base de datos réplica en un hilo.
-		//go sendMirror(medicion)
+		go sendMirror(medicion)
 		
 		c.Status(http.StatusOK)
 		return
@@ -167,7 +192,7 @@ func main() {
 	r.Run() // listen and serve on 0.0.0.0:8080
 }
 
-/* func sendMirror(med Medicion) {
+func sendMirror(med Medicion) {
 	clientHealth := &http.Client{}
     req, _ := http.NewRequest("GET", "http://central-server:8080/healthcheck", nil)
 
@@ -199,13 +224,14 @@ func main() {
         time.Sleep(time.Minute * 1) // espera 1 Minuto antes de volver a intentar
     }
 	
-} */
+}
+
 // Thread
 func consumer(queue string) {
 
 	var conn *amqp.Connection
 	var err error
-
+	log.Printf(queue + " -- Dentro del consumer")
 	for conn == nil {
 		conn, err = amqp.Dial("amqp://" + queue + "/")
 		if err != nil {
