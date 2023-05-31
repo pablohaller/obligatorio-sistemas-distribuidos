@@ -110,8 +110,7 @@ services:
       build: ./batching
       environment:
         - WEB-SERVER-HOST=web-server
-        #- MIRROR-DB-SERVER=mirror-db-server
-        - MIRROR-DB-SERVER=central-server
+        - MIRROR-DB-SERVER=mirror-db-server
       ports:
         - '69:8080'
       volumes:

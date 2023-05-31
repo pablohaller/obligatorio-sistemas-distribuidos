@@ -2,17 +2,18 @@ package main
 
 import (
 	//"encoding/json"
+	"bytes"
 	"database/sql"
-	"net/http"
-	"time"
+	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
-	"github.com/streadway/amqp"
+	"strconv"
+	"time"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
-	"bytes"
-	"strconv"
+	"github.com/streadway/amqp"
 )
 
 var DB_CONN_STRING = os.Getenv("DB_CONN_STRING")
@@ -183,7 +184,7 @@ func main() {
 		}
 		
 		// Mandar a guardar en la base de datos réplica en un hilo.
-		//go sendMirror(medicion)
+		go sendMirror(medicion)
 		
 		c.Status(http.StatusOK)
 		return
@@ -191,7 +192,7 @@ func main() {
 	r.Run() // listen and serve on 0.0.0.0:8080
 }
 
-/* func sendMirror(med Medicion) {
+func sendMirror(med Medicion) {
 	clientHealth := &http.Client{}
     req, _ := http.NewRequest("GET", "http://central-server:8080/healthcheck", nil)
 
@@ -223,7 +224,8 @@ func main() {
         time.Sleep(time.Minute * 1) // espera 1 Minuto antes de volver a intentar
     }
 	
-} */
+}
+
 // Thread
 func consumer(queue string) {
 
