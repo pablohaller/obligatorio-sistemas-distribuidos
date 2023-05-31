@@ -1,5 +1,4 @@
-CREATE USER replicator WITH REPLICATION ENCRYPTED PASSWORD 'my_replicator_password';
-SELECT * FROM pg_create_physical_replication_slot('replication_slot_slave1');
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO repl_user;
 
 CREATE TABLE IF NOT EXISTS Mediciones (
     datetime TIMESTAMP(0),

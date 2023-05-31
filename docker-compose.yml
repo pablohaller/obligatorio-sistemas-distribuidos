@@ -33,7 +33,7 @@ services:
     environment:
       - QUEUE_HOST=queue
       - QUEUE_NAME=queue
-      - DB_CONN_STRING=postgresql://root:obligatorioequipo3@central-db:5432/central-db?sslmode=disable
+      - DB_CONN_STRING=postgresql://my_user:my_password@central-db:5432/my_database
       - MIRROR_DB_SERVER_HOST=mirror-db-server
     depends_on:
       queue:
@@ -45,22 +45,19 @@ services:
 
   ## Central DB
   central-db:
-      image: postgres:13.1-alpine
-      environment:
-        POSTGRES_DB: central-db
-        POSTGRES_USER: root
-        POSTGRES_PASSWORD: obligatorioequipo3
-      healthcheck:
-        test: pg_isready -d central-db
-        interval: 10s
-        timeout: 30s
-        retries: 5
-        start_period: 80s 
-      volumes:
-        - ./postgres-conf/init.sql:/docker-entrypoint-initdb.d/init.sql
-        - ./postgres-conf/postgres.conf:/etc/postgresql/postgresql.conf
-        - ./postgres-conf/pg_hba.conf:/etc/postgresql/pg_hba.conf
-      command: sh -c "docker-entrypoint.sh postgres && psql -U root -d central-db -f /docker-entrypoint-initdb.d/init.sql && pg_basebackup -D /tmp/postgresslave -S replication_slot_slave1 -X stream -P -U replicator -Fp -R"
+    image: 'bitnami/postgresql:latest'
+    ports:
+      - '5432'
+    volumes:
+      - 'postgresql_master_data:/bitnami/postgresql'
+      - './postgres-conf/init.sql:/docker-entrypoint-initdb.d/init.sql'
+    environment:
+      - POSTGRESQL_REPLICATION_MODE=master
+      - POSTGRESQL_REPLICATION_USER=repl_user
+      - POSTGRESQL_REPLICATION_PASSWORD=repl_password
+      - POSTGRESQL_USERNAME=my_user
+      - POSTGRESQL_PASSWORD=my_password
+      - POSTGRESQL_DATABASE=my_database
 
 
 ###################################################################################################################
@@ -73,7 +70,7 @@ services:
     links:
       - mirror-backup-db
     environment:
-      - DB_CONN_STRING=postgresql://root:obligatorioequipo3@mirror-backup-db:5432/mirror-backup-db?sslmode=disable
+      - DB_CONN_STRING=postgresql://repl_user:repl_password@mirror-backup-db:5432/my_database
     depends_on:
       mirror-backup-db:
         condition: service_healthy
@@ -82,19 +79,18 @@ services:
 
   ## Mirror Backup DB
   mirror-backup-db:
-      image: postgres:13.1-alpine
-      environment:
-        POSTGRES_DB: mirror-backup-db
-        POSTGRES_USER: root
-        POSTGRES_PASSWORD: obligatorioequipo3
-      healthcheck:
-        test: pg_isready -d mirror-backup-db
-        interval: 10s
-        timeout: 30s
-        retries: 5
-        start_period: 80s 
-      volumes:
-        - ./postgres-conf/init.sql:/docker-entrypoint-initdb.d/init.sql
+    image: 'bitnami/postgresql:latest'
+    ports:
+      - '5432'
+    depends_on:
+      - postgresql-master
+    environment:
+      - POSTGRESQL_REPLICATION_MODE=slave
+      - POSTGRESQL_REPLICATION_USER=repl_user
+      - POSTGRESQL_REPLICATION_PASSWORD=repl_password
+      - POSTGRESQL_MASTER_HOST=postgresql-master
+      - POSTGRESQL_PASSWORD=my_password
+      - POSTGRESQL_MASTER_PORT_NUMBER=5432
 
 ###################################################################################################################
 
