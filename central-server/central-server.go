@@ -64,11 +64,13 @@ func main() {
 			}
 		}
 		if !found {
-			go consumer(suscribe.Queue)
+			go consumer(suscribe.Queue+ ":5672")
 			consumiendo = append(consumiendo, suscribe.Sector)
 			c.JSON(http.StatusCreated, suscribe.Queue)
+			log.Printf(suscribe.Sector + " se suscribio para ser consumido")
 		}else{
-			c.JSON(http.StatusOK)
+			c.JSON(http.StatusOK, "Already consuming")
+			log.Printf(suscribe.Sector + " ya esta suscripto")
 		}
 	})
 
@@ -227,7 +229,7 @@ func consumer(queue string) {
 
 	var conn *amqp.Connection
 	var err error
-
+	log.Printf(queue + " -- Dentro del consumer")
 	for conn == nil {
 		conn, err = amqp.Dial("amqp://" + queue + "/")
 		if err != nil {

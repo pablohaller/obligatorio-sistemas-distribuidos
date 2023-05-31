@@ -9,8 +9,6 @@ import (
 	"time"
     "github.com/streadway/amqp"
 	"net/http"
-	"io"
-	"strconv"
 	"github.com/gin-gonic/gin"
 	"os"
 	"bytes"
@@ -46,18 +44,18 @@ func main() {
         time.Sleep(time.Second * 5) // espera 5 segundos antes de volver a intentar
     }
 
-	queueName := QUEUE_HOST
 	var conn *amqp.Connection
 	var err error
 
 	for conn == nil {
-		conn, err = amqp.Dial("amqp://" + queueName + ":5672/")
+		conn, err = amqp.Dial("amqp://" + QUEUE_HOST + ":5672/")
 		if err != nil {
 			log.Printf("Failed to connect to RabbitMQ: %v", err)
 			time.Sleep(5 * time.Second) // wait 5 seconds before retrying
 		}
 	}
 	defer conn.Close()
+	log.Printf("Connected to RabbitMQ")
 
 // continue with other code using `conn` object
 
@@ -110,8 +108,6 @@ func main() {
 		fmt.Printf("Message sent: %s", body)
 
 		// guardar en MONGO DB LA MEDICION
-
-
 		return
 	})
 	r.Run() // listen and serve on 0.0.0.0:8080
@@ -136,12 +132,21 @@ func alertCentral(){
 			log.Fatal("Error al convertir la estructura a JSON:", marshalerr)
 		}
 
+		log.Printf("mandando http request suscribe")
 		// suscribirse para obtener el nombre de la queue
 		req, http_err := http.NewRequest("POST", "http://central-server:8080/Sector/Suscribe", bytes.NewBuffer(jsonData))
 		if http_err != nil {
 			log.Fatal("Error al crear la solicitud:", http_err)
+			log.Printf("ERROR HTTP")
 		}
 		req.Header.Set("Content-Type", "application/json")
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			log.Fatal("Error al enviar la solicitud:", err)
+		}
+		resp.Body.Close()
 
 		// AGREGAR SI ES DESEADO EL MANDAR TODOS LOS DATOS GUARDADOS DE HACE 5 MINUTOS HASTA 
 		// AHORA DE MONGO DB
