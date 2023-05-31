@@ -1,6 +1,5 @@
 services:
-
-# Sector Server
+  # Sector Server
   sector-server-a:
     build: ./sector-server
     environment:
@@ -11,8 +10,7 @@ services:
       queue:
         condition: service_healthy
 
-
-# Sector Sensor
+  # Sector Sensor
   sector-sensor-a:
     build: ./sensor
     environment:
@@ -21,9 +19,9 @@ services:
     depends_on:
       - sector-server-a
 
-###################################################################################################################
+  ###################################################################################################################
 
-# Central Server
+  # Central Server
 
   ## Server
   central-server:
@@ -45,23 +43,23 @@ services:
 
   ## Central DB
   central-db:
-      image: postgres:13.1-alpine
-      environment:
-        POSTGRES_DB: central-db
-        POSTGRES_USER: root
-        POSTGRES_PASSWORD: obligatorioequipo3
-      healthcheck:
-        test: pg_isready -d central-db
-        interval: 10s
-        timeout: 30s
-        retries: 5
-        start_period: 80s 
-      volumes:
-        - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    image: postgres:13.1-alpine
+    environment:
+      POSTGRES_DB: central-db
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: obligatorioequipo3
+    healthcheck:
+      test: pg_isready -d central-db
+      interval: 10s
+      timeout: 30s
+      retries: 5
+      start_period: 80s
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
-###################################################################################################################
+  ###################################################################################################################
 
-# Mirror DB Server
+  # Mirror DB Server
 
   ## Server
   mirror-db-server:
@@ -78,23 +76,23 @@ services:
 
   ## Mirror Backup DB
   mirror-backup-db:
-      image: postgres:13.1-alpine
-      environment:
-        POSTGRES_DB: mirror-backup-db
-        POSTGRES_USER: root
-        POSTGRES_PASSWORD: obligatorioequipo3
-      healthcheck:
-        test: pg_isready -d mirror-backup-db
-        interval: 10s
-        timeout: 30s
-        retries: 5
-        start_period: 80s 
-      volumes:
-        - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    image: postgres:13.1-alpine
+    environment:
+      POSTGRES_DB: mirror-backup-db
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: obligatorioequipo3
+    healthcheck:
+      test: pg_isready -d mirror-backup-db
+      interval: 10s
+      timeout: 30s
+      retries: 5
+      start_period: 80s
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
-###################################################################################################################
+  ###################################################################################################################
 
-# RabbitMQ Queues
+  # RabbitMQ Queues
 
   queue:
     image: rabbitmq:3-alpine
@@ -107,8 +105,14 @@ services:
       - "5672:5672"
     expose:
       - "5672"
-      
-   
+
+  webserver-next:
+    build: ./webserver-next
+    environment:
+      - NAME=WEBSERVER-NEXT
+    ports:
+      - "3000:3000"
+      - "5555:5555"
 
   # mongo:
   #   image: mongo
