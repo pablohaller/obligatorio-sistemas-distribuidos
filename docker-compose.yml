@@ -8,7 +8,7 @@ services:
       - QUEUE_HOST=queue1
       - QUEUE_NAME=queue1
     depends_on:
-      queue:
+      queue1:
         condition: service_healthy
 
 
@@ -31,12 +31,12 @@ services:
     links:
       - central-db
     environment:
-      - QUEUE_HOST=queue
-      - QUEUE_NAME=queue
+      - QUEUE_HOST=queue1
+      - QUEUE_NAME=queue1
       - DB_CONN_STRING=postgresql://my_user:my_password@central-db:5432/my_database
       - MIRROR_DB_SERVER_HOST=mirror-db-server
     depends_on:
-      queue:
+      queue1:
         condition: service_healthy
       central-db:
         condition: service_healthy
@@ -96,7 +96,7 @@ services:
 
 # RabbitMQ Queues
 
-  queue:
+  queue1:
     image: rabbitmq:3-alpine
     healthcheck:
       test: rabbitmq-diagnostics -q ping
