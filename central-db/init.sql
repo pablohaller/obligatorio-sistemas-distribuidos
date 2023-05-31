@@ -1,4 +1,4 @@
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO repl_user;
+CREATE ROLE IF NOT EXISTS repl_user;
 
 CREATE TABLE IF NOT EXISTS Mediciones (
     datetime TIMESTAMP(0),
@@ -7,3 +7,5 @@ CREATE TABLE IF NOT EXISTS Mediciones (
     presion INT,
     PRIMARY KEY (datetime, sensor, sector)
 );
+
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO repl_user;

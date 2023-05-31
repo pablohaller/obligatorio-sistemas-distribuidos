@@ -33,7 +33,7 @@ services:
     environment:
       - QUEUE_HOST=queue1
       - QUEUE_NAME=queue1
-      - DB_CONN_STRING=postgresql://my_user:my_password@central-db:5432/my_database
+      - DB_CONN_STRING=postgresql://my_user:my_password@central-db:5432/central-db?sslmode=disable
       - MIRROR_DB_SERVER_HOST=mirror-db-server
     depends_on:
       queue1:
@@ -57,9 +57,9 @@ services:
       - POSTGRESQL_REPLICATION_PASSWORD=repl_password
       - POSTGRESQL_USERNAME=my_user
       - POSTGRESQL_PASSWORD=my_password
-      - POSTGRESQL_DATABASE=my_database
+      - POSTGRESQL_DATABASE=central-db
     healthcheck:
-      test: pg_isready -U my_user -d my_database
+      test: pg_isready -U my_user -d central-db
       interval: 10s
       timeout: 30s
       retries: 5
@@ -75,7 +75,7 @@ services:
     links:
       - mirror-backup-db
     environment:
-      - DB_CONN_STRING=postgresql://repl_user:repl_password@mirror-backup-db:5432/my_database
+      - DB_CONN_STRING=postgresql://repl_user:repl_password@mirror-backup-db:5432/central-db
     depends_on:
       mirror-backup-db:
         condition: service_healthy
@@ -97,7 +97,7 @@ services:
       - POSTGRESQL_PASSWORD=my_password
       - POSTGRESQL_MASTER_PORT_NUMBER=5432
     healthcheck:
-      test: pg_isready -U repl_user -d my_database
+      test: pg_isready -U repl_user -d central-db
       interval: 10s
       timeout: 30s
       retries: 5
