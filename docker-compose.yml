@@ -49,8 +49,8 @@ services:
     ports:
       - '5432'
     volumes:
-      - 'postgresql_master_data:/bitnami/postgresql'
-      - './postgres-conf/init.sql:/docker-entrypoint-initdb.d/init.sql'
+      - './central-db/data:/bitnami/postgresql'
+      - './central-db/init.sql:/docker-entrypoint-initdb.d/init.sql'
     environment:
       - POSTGRESQL_REPLICATION_MODE=master
       - POSTGRESQL_REPLICATION_USER=repl_user
@@ -58,7 +58,12 @@ services:
       - POSTGRESQL_USERNAME=my_user
       - POSTGRESQL_PASSWORD=my_password
       - POSTGRESQL_DATABASE=my_database
-
+    healthcheck:
+      test: pg_isready -U my_user -d my_database
+      interval: 10s
+      timeout: 30s
+      retries: 5
+      start_period: 80s
 
 ###################################################################################################################
 
@@ -83,14 +88,20 @@ services:
     ports:
       - '5432'
     depends_on:
-      - postgresql-master
+      - central-db
     environment:
       - POSTGRESQL_REPLICATION_MODE=slave
       - POSTGRESQL_REPLICATION_USER=repl_user
       - POSTGRESQL_REPLICATION_PASSWORD=repl_password
-      - POSTGRESQL_MASTER_HOST=postgresql-master
+      - POSTGRESQL_MASTER_HOST=central-db
       - POSTGRESQL_PASSWORD=my_password
       - POSTGRESQL_MASTER_PORT_NUMBER=5432
+    healthcheck:
+      test: pg_isready -U repl_user -d my_database
+      interval: 10s
+      timeout: 30s
+      retries: 5
+      start_period: 80s
 
 ###################################################################################################################
 
