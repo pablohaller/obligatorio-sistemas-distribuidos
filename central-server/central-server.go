@@ -87,7 +87,7 @@ func main() {
 		}
 
 		//Para la lectura de la base de datos:
-		rows, err := db.Query("SELECT * FROM mediciones WHERE \"datetime\" >= NOW() - INTERVAL '" + strconv.Itoa(minutos) + " minutes'")
+		rows, err := db.Query("SELECT * FROM mediciones WHERE \"datetime\" >= (SELECT NOW() - INTERVAL '3 hours') - INTERVAL '" + strconv.Itoa(minutos) + " minutes'")
 		if err != nil {
 			fmt.Println("Error al preparar la sentencia SQL:", err)
 		}
