@@ -50,4 +50,4 @@ while True:
 
     # Esperar 1 segundo antes de realizar la siguiente solicitud
     i+=1
-    time.sleep(5)
+    time.sleep(10)
