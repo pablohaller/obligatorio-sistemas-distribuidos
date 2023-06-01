@@ -18,7 +18,6 @@ while True:
     if i == error and errorFlag:
         presion-=50
         errorFlag = False
-
     current_datetime = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
     medicion = {
         "Datetime": current_datetime,
@@ -33,6 +32,7 @@ while True:
     # Establecer los encabezados requeridos
     headers = {
         "Content-Type": "application/json"
+        
     }
 
 

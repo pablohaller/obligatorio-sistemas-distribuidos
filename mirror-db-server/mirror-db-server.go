@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
 )
@@ -34,6 +35,50 @@ func main() {
 	r.GET("/healthcheck", func(c *gin.Context) {
 		c.JSON(http.StatusOK, nil)
 		
+	})
+
+	// Definir el endpoint "/Mediciones" con un parámetro de ruta para los minutos
+	r.GET("/UltMediciones/:minutos", func(c *gin.Context) {
+		// Obtener el valor de los minutos desde la URL
+		minutosStr := c.Param("minutos")
+		minutos, err := strconv.Atoi(minutosStr)
+		if err != nil {
+			// Manejar el error si no se puede convertir a entero
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Valor inválido para minutos"})
+			return
+		}
+
+		//Para la lectura de la base de datos:
+		rows, err := db.Query("SELECT * FROM mediciones WHERE \"datetime\" >= NOW() - INTERVAL '" + strconv.Itoa(minutos) + " minutes'")
+		if err != nil {
+			fmt.Println("Error al preparar la sentencia SQL:", err)
+		}
+		defer rows.Close() // remember to close the rows object when done
+
+		// Slice para guardar las mediciones
+		var mediciones []Medicion
+
+		// Recorrer el resultado de la consulta y guardar los valores en las estructuras de tipo Medicion
+		for rows.Next() {
+			var medicion Medicion
+			err = rows.Scan(&medicion.Datetime, &medicion.Sensor, &medicion.Sector, &medicion.Presion)
+			if err != nil {
+				fmt.Println("Error al preparar la sentencia SQL:", err)
+				c.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+			// Agregar la medición al slice
+			mediciones = append(mediciones, medicion)
+		}
+		// Si hubo algún error al recorrer los resultados
+		if err = rows.Err(); err != nil {
+			fmt.Println("Error al recorrer los resultados de la consulta:", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+	
+		// Devolver las mediciones como JSON
+		c.JSON(http.StatusOK, mediciones)
 	})
 
 
@@ -70,6 +115,8 @@ func main() {
 		// Devolver las mediciones como JSON
 		c.JSON(http.StatusOK, mediciones)
 	})
+
+	
 	
 	r.Run() // listen and serve on 0.0.0.0:8080
 }

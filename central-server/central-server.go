@@ -2,16 +2,18 @@ package main
 
 import (
 	//"encoding/json"
+	"bytes"
 	"database/sql"
-	"net/http"
-	"time"
+	_ "encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
-	"github.com/streadway/amqp"
+	"strconv"
+	"time"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
-	"bytes"
+	"github.com/streadway/amqp"
 )
 
 var DB_CONN_STRING = os.Getenv("DB_CONN_STRING")
@@ -24,7 +26,12 @@ type Medicion struct {
     Presion  int       `json:"Presion"`
 }
 
-var consumiendo = false
+type Suscribe struct {
+    Sector   string    `json:"Sector"`
+    Queue    string    `json:"Queue"`
+}
+
+var consumiendo []string
 
 func main() {
 	time.Sleep(time.Second)
@@ -41,12 +48,75 @@ func main() {
 		
 	})
 
-	r.GET("/Sector/Suscribe", func(c *gin.Context) {
-		c.JSON(http.StatusOK, "queue:5672")
-		if !consumiendo {
-			consumiendo = true
-			go consumer("queue:5672")
+	r.POST("/Sector/Suscribe", func(c *gin.Context) {
+		var found bool
+		var suscribe Suscribe
+		if err := c.ShouldBindJSON(&suscribe); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
 		}
+		// Recorrer el array de strings
+		for _, str := range consumiendo {
+			// Comparar el elemento actual con el valor deseado
+			if str == suscribe.Sector {
+				// Se encontró el valor deseado
+				found = true
+				break
+			}
+		}
+		if !found {
+			go consumer(suscribe.Queue+ ":5672")
+			consumiendo = append(consumiendo, suscribe.Sector)
+			c.JSON(http.StatusCreated, suscribe.Queue)
+			log.Printf(suscribe.Sector + " se suscribio para ser consumido")
+		}else{
+			c.JSON(http.StatusOK, "Already consuming")
+			log.Printf(suscribe.Sector + " ya esta suscripto")
+		}
+	})
+
+	// Definir el endpoint "/Mediciones" con un parámetro de ruta para los minutos
+	r.GET("/UltMediciones/:minutos", func(c *gin.Context) {
+		// Obtener el valor de los minutos desde la URL
+		minutosStr := c.Param("minutos")
+		minutos, err := strconv.Atoi(minutosStr)
+		if err != nil {
+			// Manejar el error si no se puede convertir a entero
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Valor inválido para minutos"})
+			return
+		}
+
+		//Para la lectura de la base de datos:
+		rows, err := db.Query("SELECT * FROM mediciones WHERE \"datetime\" >= NOW() - INTERVAL '" + strconv.Itoa(minutos) + " minutes'")
+		if err != nil {
+			fmt.Println("Error al preparar la sentencia SQL:", err)
+		}
+		defer rows.Close() // remember to close the rows object when done
+
+		// Slice para guardar las mediciones
+		var mediciones []Medicion
+
+		// Recorrer el resultado de la consulta y guardar los valores en las estructuras de tipo Medicion
+		for rows.Next() {
+			var medicion Medicion
+			err = rows.Scan(&medicion.Datetime, &medicion.Sensor, &medicion.Sector, &medicion.Presion)
+			if err != nil {
+				fmt.Println("Error al preparar la sentencia SQL:", err)
+				c.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+			// Agregar la medición al slice
+			mediciones = append(mediciones, medicion)
+		}
+		// Si hubo algún error al recorrer los resultados
+		if err = rows.Err(); err != nil {
+			fmt.Println("Error al recorrer los resultados de la consulta:", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+	
+		// Devolver las mediciones como JSON
+		c.JSON(http.StatusOK, mediciones)
 	})
 
 	r.GET("/Mediciones", func(c *gin.Context) {
@@ -112,55 +182,19 @@ func main() {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo insertar la medición en la base de datos"})
 			return
 		}
-		
-		// Mandar a guardar en la base de datos réplica en un hilo.
-		//go sendMirror(medicion)
-		
+	
 		c.Status(http.StatusOK)
 		return
 	})
 	r.Run() // listen and serve on 0.0.0.0:8080
 }
-
-/* func sendMirror(med Medicion) {
-	clientHealth := &http.Client{}
-    req, _ := http.NewRequest("GET", "http://central-server:8080/healthcheck", nil)
-
-    for i:= 0 ; i < 3 ; i++ {
-        resp, err := clientHealth.Do(req)
-        if err != nil {
-            fmt.Println(err)
-        } else if resp.StatusCode == 200 {
-			body, err := json.Marshal(med)
-			if err != nil {
-				log.Fatalf("Error serializing medicion to JSON: %v", err)
-			}
-            // Crear HTTP Request al Mirror DB Server
-			req, error := http.NewRequest("PUT", "http://" + MIRROR_DB_SERVER_HOST+":8080/Mediciones", bytes.NewBuffer(body) )
-			if error != nil {
-				log.Fatalf("Error al enviar request al Mirror DB Server: %v", error)
-				return
-			}
-			req.Header.Set("Content-Type", "application/json")
-			// Enviar la solicitud y capturar la respuesta y el posible error
-			client := &http.Client{}
-			resp, err := client.Do(req)
-			if err != nil {
-				log.Fatalf("Error al pegar al endpoint de mediciones: %v", err)
-			}
-			defer resp.Body.Close()
-            break
-        }
-        time.Sleep(time.Minute * 1) // espera 1 Minuto antes de volver a intentar
-    }
 	
-} */
 // Thread
 func consumer(queue string) {
 
 	var conn *amqp.Connection
 	var err error
-
+	log.Printf(queue + " -- Dentro del consumer")
 	for conn == nil {
 		conn, err = amqp.Dial("amqp://" + queue + "/")
 		if err != nil {

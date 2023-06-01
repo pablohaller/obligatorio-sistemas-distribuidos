@@ -1,5 +1,6 @@
 services:
-  # Sector Server
+
+# Sector Server
   sector-server-a:
     build: ./sector-server
     environment:
@@ -7,10 +8,11 @@ services:
       - QUEUE_HOST=queue1
       - QUEUE_NAME=queue1
     depends_on:
-      queue:
+      queue1:
         condition: service_healthy
 
-  # Sector Sensor
+
+# Sector Sensor
   sector-sensor-a:
     build: ./sensor
     environment:
@@ -19,9 +21,9 @@ services:
     depends_on:
       - sector-server-a
 
-  ###################################################################################################################
+###################################################################################################################
 
-  # Central Server
+# Central Server
 
   ## Server
   central-server:
@@ -29,12 +31,12 @@ services:
     links:
       - central-db
     environment:
-      - QUEUE_HOST=queue
-      - QUEUE_NAME=queue
-      - DB_CONN_STRING=postgresql://root:obligatorioequipo3@central-db:5432/central-db?sslmode=disable
+      - QUEUE_HOST=queue1
+      - QUEUE_NAME=queue1
+      - DB_CONN_STRING=postgresql://my_user:my_password@central-db:5432/central-db?sslmode=disable
       - MIRROR_DB_SERVER_HOST=mirror-db-server
     depends_on:
-      queue:
+      queue1:
         condition: service_healthy
       central-db:
         condition: service_healthy
@@ -43,23 +45,29 @@ services:
 
   ## Central DB
   central-db:
-    image: postgres:13.1-alpine
+    image: 'bitnami/postgresql:latest'
+    ports:
+      - '5432'
+    volumes:
+      - './central-db/data:/bitnami/postgresql'
+      - './central-db/init.sql:/docker-entrypoint-initdb.d/init.sql'
     environment:
-      POSTGRES_DB: central-db
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: obligatorioequipo3
+      - POSTGRESQL_REPLICATION_MODE=master
+      - POSTGRESQL_REPLICATION_USER=repl_user
+      - POSTGRESQL_REPLICATION_PASSWORD=repl_password
+      - POSTGRESQL_USERNAME=my_user
+      - POSTGRESQL_PASSWORD=my_password
+      - POSTGRESQL_DATABASE=central-db
     healthcheck:
-      test: pg_isready -d central-db
+      test: pg_isready -U my_user -d central-db
       interval: 10s
       timeout: 30s
       retries: 5
       start_period: 80s
-    volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
-  ###################################################################################################################
+###################################################################################################################
 
-  # Mirror DB Server
+# Mirror DB Server
 
   ## Server
   mirror-db-server:
@@ -67,7 +75,7 @@ services:
     links:
       - mirror-backup-db
     environment:
-      - DB_CONN_STRING=postgresql://root:obligatorioequipo3@mirror-backup-db:5432/mirror-backup-db?sslmode=disable
+      - DB_CONN_STRING=postgresql://repl_user:repl_password@mirror-backup-db:5432/central-db
     depends_on:
       mirror-backup-db:
         condition: service_healthy
@@ -76,25 +84,30 @@ services:
 
   ## Mirror Backup DB
   mirror-backup-db:
-    image: postgres:13.1-alpine
+    image: 'bitnami/postgresql:latest'
+    ports:
+      - '5432'
+    depends_on:
+      - central-db
     environment:
-      POSTGRES_DB: mirror-backup-db
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: obligatorioequipo3
+      - POSTGRESQL_REPLICATION_MODE=slave
+      - POSTGRESQL_REPLICATION_USER=repl_user
+      - POSTGRESQL_REPLICATION_PASSWORD=repl_password
+      - POSTGRESQL_MASTER_HOST=central-db
+      - POSTGRESQL_PASSWORD=my_password
+      - POSTGRESQL_MASTER_PORT_NUMBER=5432
     healthcheck:
-      test: pg_isready -d mirror-backup-db
+      test: pg_isready -U repl_user -d central-db
       interval: 10s
       timeout: 30s
       retries: 5
       start_period: 80s
-    volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
-  ###################################################################################################################
+###################################################################################################################
 
-  # RabbitMQ Queues
+# RabbitMQ Queues
 
-  queue:
+  queue1:
     image: rabbitmq:3-alpine
     healthcheck:
       test: rabbitmq-diagnostics -q ping
@@ -105,6 +118,17 @@ services:
       - "5672:5672"
     expose:
       - "5672"
+#####################################################################################################################
+  
+  batch:
+      build: ./batching
+      environment:
+        - WEB-SERVER-HOST=web-server
+        - MIRROR-DB-SERVER=mirror-db-server
+      ports:
+        - '69:8080'
+      volumes:
+        - ./data:/app/data
 
   webserver-next:
     build: ./webserver-next
