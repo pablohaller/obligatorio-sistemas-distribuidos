@@ -196,7 +196,7 @@ func main() {
 			return
 		}
 		//Para la lectura de la base de datos:
-		rows, err := db.Query("SELECT * FROM mediciones WHERE \"datetime\" >= (SELECT NOW() - INTERVAL '3 hours') - INTERVAL '" + strconv.Itoa(minutos) + " minutes'")
+		rows, err := db.Query("SELECT * FROM Mediciones WHERE datetime >= '"+ medicion.Datetime.Format("2006-01-02T15:04:05Z") +"' AND sensor = '"+medicion.Sensor+"' AND sector = '"+medicion.Sector+"';");
 		if err != nil {
 			fmt.Println("Error al preparar la sentencia SQL:", err)
 		}
