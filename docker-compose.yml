@@ -130,7 +130,13 @@ services:
       volumes:
         - ./data:/app/data
 
-   
+  webserver-next:
+    build: ./webserver-next
+    environment:
+      - NAME=WEBSERVER-NEXT
+    ports:
+      - "3000:3000"
+      - "5555:5555"
 
   # mongo:
   #   image: mongo
