@@ -12,11 +12,11 @@ services:
         condition: service_healthy
 
 # Sector Sensor
-  sector-sensor-a:
+  sector-sensor-1a:
     build: ./sensor
     environment:
       - SECTOR_NAME=sector-server-a
-      - SENSOR_NAME=sensor-a
+      - SENSOR_NAME=sensor-1a
     depends_on:
       - sector-server-a
 
@@ -139,6 +139,16 @@ services:
     ports:
       - "3000:3000"
       - "5555:5555"
+#####################################################################################################################
+
+# Proxy Server
+  proxy-server:
+      build: ./proxy-server
+      depends_on:
+        - mirror-db-server
+        - central-server
+      ports:
+        - "8083:80"
 
   # mongo:
   #   image: mongo
@@ -156,3 +166,54 @@ services:
   #     ME_CONFIG_MONGODB_ADMINUSERNAME: root
   #     ME_CONFIG_MONGODB_ADMINPASSWORD: example
   #     ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
+
+#####################################################################################################################
+#####################################################################################################################
+
+#   # Sector Server
+#   sector-server-b:
+#     build: ./sector-server
+#     environment:
+#       - SECTOR_NAME=sector-server-b
+#       - QUEUE_HOST=queue2
+#       - QUEUE_NAME=queue2
+#     depends_on:
+#       queue2:
+#         condition: service_healthy
+# # Queue 2
+#   queue2:
+#       image: rabbitmq:3-alpine
+#       healthcheck:
+#         test: rabbitmq-diagnostics -q ping
+#         interval: 10s
+#         timeout: 10s
+#         retries: 3
+#       expose:
+#         - "5672"
+
+# # Sector Sensor
+#   sector-sensor-1b:
+#     build: ./sensor
+#     environment:
+#       - SECTOR_NAME=sector-server-b
+#       - SENSOR_NAME=sensor-1b
+#     depends_on:
+#       - sector-server-b
+
+#   # Sector Sensor
+#   sector-sensor-2b:
+#     build: ./sensor
+#     environment:
+#       - SECTOR_NAME=sector-server-b
+#       - SENSOR_NAME=sensor-2b
+#     depends_on:
+#       - sector-server-b
+
+#   # Sector Sensor
+#   sector-sensor-2a:
+#     build: ./sensor
+#     environment:
+#       - SECTOR_NAME=sector-server-a
+#       - SENSOR_NAME=sensor-2a
+#     depends_on:
+#       - sector-server-a
