@@ -88,7 +88,8 @@ services:
     ports:
       - '5432'
     depends_on:
-      - central-db
+      central-db:
+        condition: service_healthy
     environment:
       - POSTGRESQL_REPLICATION_MODE=slave
       - POSTGRESQL_REPLICATION_USER=repl_user
