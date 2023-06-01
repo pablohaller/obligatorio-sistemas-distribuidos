@@ -11,7 +11,6 @@ services:
       queue1:
         condition: service_healthy
 
-
 # Sector Sensor
   sector-sensor-a:
     build: ./sensor
@@ -75,7 +74,7 @@ services:
     links:
       - mirror-backup-db
     environment:
-      - DB_CONN_STRING=postgresql://repl_user:repl_password@mirror-backup-db:5432/central-db
+      - DB_CONN_STRING=postgresql://repl_user:repl_password@mirror-backup-db:5432/central-db?sslmode=disable
     depends_on:
       mirror-backup-db:
         condition: service_healthy
@@ -88,7 +87,8 @@ services:
     ports:
       - '5432'
     depends_on:
-      - central-db
+      central-db:
+        condition: service_healthy
     environment:
       - POSTGRESQL_REPLICATION_MODE=slave
       - POSTGRESQL_REPLICATION_USER=repl_user
