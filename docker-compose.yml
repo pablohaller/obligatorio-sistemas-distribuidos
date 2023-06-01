@@ -123,12 +123,14 @@ services:
   batch:
       build: ./batching
       environment:
-        - WEB-SERVER-HOST=web-server
+        - POLLING-RATE=1
+        - WEB-SERVER-HOST=webserver-next
         - MIRROR-DB-SERVER=mirror-db-server
       ports:
-        - '69:8080'
-      volumes:
-        - ./data:/app/data
+        - '8082:8080'
+      depends_on:
+        - "mirror-db-server"
+        - "webserver-next"
 
   webserver-next:
     build: ./webserver-next
