@@ -186,6 +186,48 @@ func main() {
 		c.Status(http.StatusOK)
 		return
 	})
+
+	r.GET("/Alerta", func(c *gin.Context) {
+		var medicion Medicion
+	
+		// Deserializar el body JSON en la struct Medicion
+		if err := c.ShouldBindJSON(&medicion); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		//Para la lectura de la base de datos:
+		rows, err := db.Query("SELECT * FROM Mediciones WHERE datetime >= '"+ medicion.Datetime.Format("2006-01-02T15:04:05Z") +"' AND sensor = '"+medicion.Sensor+"' AND sector = '"+medicion.Sector+"';");
+		if err != nil {
+			fmt.Println("Error al preparar la sentencia SQL:", err)
+		}
+		defer rows.Close() // remember to close the rows object when done
+
+		// Slice para guardar las mediciones
+		var mediciones []Medicion
+
+		// Recorrer el resultado de la consulta y guardar los valores en las estructuras de tipo Medicion
+		for rows.Next() {
+			var medicion Medicion
+			err = rows.Scan(&medicion.Datetime, &medicion.Sensor, &medicion.Sector, &medicion.Presion)
+			if err != nil {
+				fmt.Println("Error al preparar la sentencia SQL:", err)
+				c.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+			// Agregar la medición al slice
+			mediciones = append(mediciones, medicion)
+		}
+		// Si hubo algún error al recorrer los resultados
+		if err = rows.Err(); err != nil {
+			fmt.Println("Error al recorrer los resultados de la consulta:", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+	
+		// Devolver las mediciones como JSON
+		c.JSON(http.StatusOK, mediciones)
+		return
+	})
 	r.Run() // listen and serve on 0.0.0.0:8080
 }
 	
