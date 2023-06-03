@@ -11,7 +11,7 @@ interface Props {
 const VARIANTS = {
   default: "font-light text-sky-500 hover:underline",
   contained:
-    "font-light text-white bg-sky-500 hover:bg-sky-600 active:bg-sky-700",
+    "font-bold text-white bg-sky-500 hover:bg-sky-600 active:bg-sky-700",
 };
 
 const Button = ({
@@ -23,7 +23,7 @@ const Button = ({
   return (
     <button
       className={twMerge(
-        "p-2 rounded-md",
+        "p-2 rounded-md font-rubik",
         VARIANTS[variant],
         fullWidth && "w-full"
       )}

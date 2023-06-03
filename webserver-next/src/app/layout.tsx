@@ -7,7 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 export const rubik = Rubik({
   subsets: ["latin"],
   display: "swap",
-  weight: ["500"],
+  weight: ["300", "500"],
   variable: "--font-rubik",
 });
 

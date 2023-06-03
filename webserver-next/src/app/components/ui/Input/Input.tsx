@@ -30,7 +30,7 @@ const Input = ({
       )}
     >
       {label && (
-        <div>
+        <div className="font-rubik font-light">
           {label} {required && <span className="text-red-500">*</span>}
         </div>
       )}
