@@ -1,0 +1,37 @@
+import React from "react";
+import { twMerge } from "tailwind-merge";
+
+interface Props {
+  children: React.ReactNode;
+  variant?: "default" | "contained";
+  fullWidth?: boolean;
+  onClick: (e?: unknown) => unknown;
+}
+
+const VARIANTS = {
+  default: "font-light text-sky-500 hover:underline",
+  contained:
+    "font-light text-white bg-sky-500 hover:bg-sky-600 active:bg-sky-700",
+};
+
+const Button = ({
+  children,
+  variant = "default",
+  fullWidth,
+  onClick,
+}: Props) => {
+  return (
+    <button
+      className={twMerge(
+        "p-2 rounded-md",
+        VARIANTS[variant],
+        fullWidth && "w-full"
+      )}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+};
+
+export default Button;

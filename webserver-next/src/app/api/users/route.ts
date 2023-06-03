@@ -21,7 +21,6 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  console.log("ab");
   if (exist) {
     throw new Error("Email already exists");
   }
