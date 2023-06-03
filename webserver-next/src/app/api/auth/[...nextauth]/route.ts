@@ -23,7 +23,7 @@ export const authOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Please enter an email and password");
+          throw new Error("Ingrese usuario y contraseña");
         }
 
         const user = await client.users.findFirst({
@@ -33,7 +33,7 @@ export const authOptions = {
         });
 
         if (!user || !user?.password) {
-          throw new Error("No user found");
+          throw new Error("Usuario no encontrado");
         }
 
         const passwordMatch = await bcrypt.compare(
@@ -42,10 +42,8 @@ export const authOptions = {
         );
 
         if (!passwordMatch) {
-          throw new Error("Incorrect password");
+          throw new Error("Contraseña incorrecta");
         }
-
-        console.log(user);
 
         return user;
       },
@@ -54,6 +52,10 @@ export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: jwt,
+  },
+  pages: {
+    signIn: "/login",
+    error: "/login",
   },
 };
 

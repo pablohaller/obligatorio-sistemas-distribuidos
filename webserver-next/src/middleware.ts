@@ -1,5 +1,4 @@
 import { getToken } from "next-auth/jwt";
-import { requestAsyncStorage } from "next/dist/client/components/request-async-storage";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -17,5 +16,5 @@ export async function middleware(req: NextRequest) {
 
 // See "Matching Paths" below to learn more
 export const config = {
-  matcher: "/dashboard/:path*",
+  matcher: ["/dashboard/:path*"],
 };

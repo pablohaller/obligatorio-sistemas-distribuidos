@@ -5,6 +5,7 @@ interface Props {
   children: React.ReactNode;
   variant?: "default" | "contained";
   fullWidth?: boolean;
+  noPadding?: boolean;
   onClick: (e?: unknown) => unknown;
 }
 
@@ -18,6 +19,7 @@ const Button = ({
   children,
   variant = "default",
   fullWidth,
+  noPadding,
   onClick,
 }: Props) => {
   return (
@@ -25,7 +27,8 @@ const Button = ({
       className={twMerge(
         "p-2 rounded-md font-rubik",
         VARIANTS[variant],
-        fullWidth && "w-full"
+        fullWidth && "w-full",
+        noPadding && "p-0"
       )}
       onClick={onClick}
     >

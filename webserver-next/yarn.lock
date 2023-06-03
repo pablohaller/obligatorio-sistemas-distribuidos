@@ -206,6 +206,19 @@
   dependencies:
     "tslib" "^2.4.0"
 
+"@tabler/icons-react@^2.21.0":
+  "integrity" "sha512-iW/Eqqb7gILb8w/BgzCLZ/8DFZxojgiu12BYJFVuWIblLysXTZ2FjahY7m0VQ41vsyfDFWKofn1uvIPCfa8yGQ=="
+  "resolved" "https://registry.npmjs.org/@tabler/icons-react/-/icons-react-2.21.0.tgz"
+  "version" "2.21.0"
+  dependencies:
+    "@tabler/icons" "2.21.0"
+    "prop-types" "^15.7.2"
+
+"@tabler/icons@2.21.0":
+  "integrity" "sha512-XKrTEHMX6XzCOwcOU8ZNA+Xqm51sI+0abn2jk1fyQUpWeFnGsOEiC+fpQ4EISc+v+U9jqgTSbh8bZ6JBuKU5sw=="
+  "resolved" "https://registry.npmjs.org/@tabler/icons/-/icons-2.21.0.tgz"
+  "version" "2.21.0"
+
 "@types/bcrypt@^5.0.0":
   "integrity" "sha512-agtcFKaruL8TmcvqbndlqHPSJgsolhf/qPWchFlgnW1gECTN/nKbFcoFnvKAQRFfKbh+BO6A3SWdJu9t+xF3Lw=="
   "resolved" "https://registry.npmjs.org/@types/bcrypt/-/bcrypt-5.0.0.tgz"
@@ -2348,7 +2361,7 @@
   dependencies:
     "@prisma/engines" "4.14.1"
 
-"prop-types@^15.8.1":
+"prop-types@^15.7.2", "prop-types@^15.8.1":
   "integrity" "sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg=="
   "resolved" "https://registry.npmjs.org/prop-types/-/prop-types-15.8.1.tgz"
   "version" "15.8.1"
@@ -2387,7 +2400,7 @@
   dependencies:
     "clsx" "^1.1.1"
 
-"react@^17.0.2 || ^18", "react@^18.2.0", "react@>= 16.8.0 || 17.x.x || ^18.0.0-0", "react@>=16", "react@18.2.0":
+"react@^16.5.1 || ^17.0.0 || ^18.0.0", "react@^17.0.2 || ^18", "react@^18.2.0", "react@>= 16.8.0 || 17.x.x || ^18.0.0-0", "react@>=16", "react@18.2.0":
   "integrity" "sha512-/3IjMdb2L9QbBdWiW5e3P2/npwMBaU9mHCSCUzNln0ZCYbcfTsGbTJrU/kGemdH2IWmB2ioZ+zkxtmq6g09fGQ=="
   "resolved" "https://registry.npmjs.org/react/-/react-18.2.0.tgz"
   "version" "18.2.0"
