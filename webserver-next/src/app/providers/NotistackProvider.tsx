@@ -4,7 +4,7 @@ import { ToastContainer } from "react-toastify";
 const NotistackProvider = () => (
   <ToastContainer
     position="top-right"
-    autoClose={false}
+    autoClose={3000}
     hideProgressBar={false}
     newestOnTop={false}
     closeOnClick
