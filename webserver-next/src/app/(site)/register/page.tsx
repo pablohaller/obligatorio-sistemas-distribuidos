@@ -46,8 +46,15 @@ export default function Page() {
     setLoading(true);
     const payload = getFormDataPayload(formData);
     const emptyFields = checkPayloadEmptyFiels(payload);
+
     if (emptyFields.length) {
       setFormData(getFormDataErrors(formData, emptyFields));
+      setLoading(false);
+      return;
+    }
+
+    if (payload?.password !== payload?.passwordCheck) {
+      toast.error("Las contraseñas no coinciden", { theme: "colored" });
       setLoading(false);
       return;
     }
