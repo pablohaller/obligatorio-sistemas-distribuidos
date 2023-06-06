@@ -1,8 +1,5 @@
 import LoadingSpinner from "@/app/components/LoadingSpinner/LoadingSpinner";
-import React from "react";
 
-const Loading = () => {
-  return <LoadingSpinner />;
-};
+const Loading = () => <LoadingSpinner />;
 
 export default Loading;

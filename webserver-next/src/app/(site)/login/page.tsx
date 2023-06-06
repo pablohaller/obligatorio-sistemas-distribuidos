@@ -20,6 +20,7 @@ import {
   handleFormData,
 } from "@/app/utils/helpers";
 import { twMerge } from "tailwind-merge";
+import LoadingSpinner from "@/app/components/LoadingSpinner/LoadingSpinner";
 
 export default function Page() {
   const session = useSession();
@@ -87,12 +88,7 @@ export default function Page() {
   return (
     <div className="h-screen grid place-items-center">
       <div className="   bg-white p-4 rounded-xl drop-shadow-md md:w-2/5 relative">
-        {loading && (
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center">
-            <IconLoader3 className="h-20 w-20 text-sky-500 animate-spin" />
-            <div className="text-3xl">Cargando</div>
-          </div>
-        )}
+        {loading && <LoadingSpinner />}
         {successMessage && (
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center text-center">
             <IconCircleCheck className="h-20 w-20 text-sky-500" />

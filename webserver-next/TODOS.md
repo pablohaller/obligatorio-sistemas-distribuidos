@@ -1,1 +1,2 @@
 - [ ] Implementar ZOD (login, signup)
+- [ ] Paginación de reporte

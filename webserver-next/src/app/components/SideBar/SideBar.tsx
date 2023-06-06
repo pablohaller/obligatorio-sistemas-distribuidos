@@ -5,6 +5,7 @@ import {
   IconMenu2,
   IconReport,
   IconUserCircle,
+  IconX,
 } from "@tabler/icons-react";
 import { Session } from "next-auth";
 import { signOut } from "next-auth/react";
@@ -53,7 +54,7 @@ const SideBar = ({ session }: Props) => {
 
   return (
     <>
-      <div className="md:w-1/5 bg-white/60 md:shadow-2xl backdrop-blur-sm relative md:static">
+      <div className="md:w-1/5 bg-white/60 md:shadow-2xl backdrop-blur-sm relative z-20 md:static">
         <div className="flex justify-between items-center py-4 px-4 border-b border-gray-300 shadow-sm min-w-full flex-row-reverse md:flex-row">
           <div className="flex items-center min-w-0 ">
             <IconUserCircle className="h-10 w-10 mr-2 text-sky-500 flex-shrink-0" />
@@ -70,10 +71,14 @@ const SideBar = ({ session }: Props) => {
             className=" text-sky-500 cursor-pointer flex-shrink-0 hidden md:block"
             onClick={handleShowLogOut}
           />
-          <IconMenu2
-            className=" text-sky-500 cursor-pointer flex-shrink-0 block md:hidden"
-            onClick={handleMobileMenu}
-          />
+          {
+            <div
+              className=" text-sky-500 cursor-pointer flex-shrink-0 block md:hidden"
+              onClick={handleMobileMenu}
+            >
+              {showMobileMenu ? <IconX /> : <IconMenu2 />}
+            </div>
+          }
         </div>
         <div
           className={twMerge(
