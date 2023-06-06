@@ -11,7 +11,14 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL(url));
   }
 
-  return NextResponse.next();
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("pathname", req.url);
+
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 }
 
 // See "Matching Paths" below to learn more

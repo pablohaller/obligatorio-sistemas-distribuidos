@@ -3,16 +3,17 @@ import { twMerge } from "tailwind-merge";
 
 interface Props {
   children: React.ReactNode;
-  variant?: "default" | "contained";
+  variant?: "default" | "contained" | "danger";
   fullWidth?: boolean;
   noPadding?: boolean;
-  onClick: (e?: unknown) => unknown;
+  onClick: (() => void) | undefined;
 }
 
 const VARIANTS = {
   default: "font-light text-sky-500 hover:underline",
   contained:
     "font-bold text-white bg-sky-500 hover:bg-sky-600 active:bg-sky-700",
+  danger: "font-bold text-white bg-red-500 hover:bg-red-600 active:bg-red-700",
 };
 
 const Button = ({

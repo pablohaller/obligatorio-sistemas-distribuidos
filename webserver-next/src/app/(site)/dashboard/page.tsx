@@ -1,16 +1,10 @@
-"use client";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import Modal from "@/app/components/modal/modal";
+import { getServerSession } from "next-auth";
 import { useSession, signOut } from "next-auth/react";
 
-const Page = () => {
-  const session = useSession();
-
-  return (
-    <div>
-      <h1>Dashboard</h1>
-      <p>{JSON.stringify(session)}</p>
-      <button onClick={() => signOut()}>Sign Out</button>
-    </div>
-  );
+const Page = async () => {
+  return <>{/* {true && <Modal />} */}</>;
 };
 
 export default Page;
