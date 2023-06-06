@@ -16,8 +16,8 @@ const Layout = async ({ children }: Props) => {
   return (
     <div className="flex flex-col md:flex-row h-full">
       <SideBar session={session} />
-      <div className="w-full h-screen p-2">
-        <div className="bg-white/80 h-full p-2 rounded-xl shadow-xl border border-gray-200 relative break-all overflow-y-scroll">
+      <div className="w-full h-[87vh] md:h-screen p-2">
+        <div className="bg-white/80 h-full rounded-xl shadow-xl border border-gray-200 relative break-all overflow-y-scroll">
           {children}
         </div>
       </div>
