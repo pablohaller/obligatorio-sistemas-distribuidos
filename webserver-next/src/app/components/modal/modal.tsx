@@ -21,7 +21,7 @@ const Modal = ({
   onCancel,
 }: Props) => {
   return (
-    <div className="fixed top-0 left-0 w-screen h-screen bg-white/50 backdrop-blur-sm grid place-items-center ">
+    <div className="z-[1000] fixed top-0 left-0 w-screen h-screen bg-white/50 backdrop-blur-sm grid place-items-center ">
       <div className="bg-white p-4 rounded-xl drop-shadow-md md:min-w-1/5 flex flex-col justify-between">
         <div>
           <div className="text-xl font-semibold mb-2">{title}</div>

@@ -1,9 +1,11 @@
-import Map from "@/app/components/Map/Map";
+import dynamic from "next/dynamic";
 import React from "react";
+
+const Map = dynamic(() => import("@/app/components/Map/Map"), { ssr: false });
 
 const Page = () => {
   return (
-    <div>
+    <div className="w-full h-full">
       <Map />
     </div>
   );
