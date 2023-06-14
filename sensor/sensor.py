@@ -4,6 +4,7 @@ from datetime import datetime
 import time
 import random
 import os
+import pytz
 import logging
 
 SectorName = os.environ.get("SECTOR_NAME")
@@ -14,11 +15,14 @@ error = random.randint(5, 10)
 errorFlag = True
 i=0
 presion = 112
+# Obtener la zona horaria de Uruguay
+timezone = pytz.timezone('America/Montevideo')
+
 while True:
     if i == error and errorFlag:
         presion-=50
         errorFlag = False
-    current_datetime = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+    current_datetime = datetime.now(timezone).strftime("%Y-%m-%dT%H:%M:%SZ")
     medicion = {
         "Datetime": current_datetime,
         "Sensor": SensorName,
