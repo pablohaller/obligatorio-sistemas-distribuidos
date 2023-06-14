@@ -1,5 +1,4 @@
 import { getToken } from "next-auth/jwt";
-import { requestAsyncStorage } from "next/dist/client/components/request-async-storage";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -12,10 +11,17 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL(url));
   }
 
-  return NextResponse.next();
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("pathname", req.url);
+
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 }
 
 // See "Matching Paths" below to learn more
 export const config = {
-  matcher: "/dashboard/:path*",
+  matcher: ["/dashboard/:path*"],
 };

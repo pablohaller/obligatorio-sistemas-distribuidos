@@ -8,33 +8,44 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const { email, password } = body;
+  try {
+    const body = await request.json();
+    const { name, email, password } = body;
 
-  if (!email || !password) {
-    return new NextResponse("Missing Fields", { status: 400 });
+    if (!name || !email || !password) {
+      return NextResponse.json({ error: "Faltan campos" }, { status: 400 });
+    }
+
+    const exist = await client.users.findFirst({
+      where: {
+        email,
+      },
+    });
+
+    if (exist) {
+      return NextResponse.json(
+        { error: "Cuenta de e-mail ya registrada" },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await client.users.create({
+      data: {
+        email,
+        name,
+        password: hashedPassword,
+      },
+    });
+
+    return NextResponse.json(user, { status: 200 });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Algo fue mal. Por favor, intente de nuevo" },
+      { status: 500 }
+    );
   }
-
-  const exist = await client.users.findFirst({
-    where: {
-      email,
-    },
-  });
-
-  console.log("ab");
-  if (exist) {
-    throw new Error("Email already exists");
-  }
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  const user = await client.users.create({
-    data: {
-      email,
-      name: email,
-      password: hashedPassword,
-    },
-  });
-
-  return NextResponse.json(user);
 }

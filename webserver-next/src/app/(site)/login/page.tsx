@@ -1,142 +1,141 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Input from "@/app/components/ui/Input/Input";
+import Button from "@/app/components/ui/Button/Button";
+import { toast } from "react-toastify";
+import {
+  IconCircleCheck,
+  IconLayoutDashboard,
+  IconLoader3,
+} from "@tabler/icons-react";
+import { DASHBOARD_PATH, REGISTER_PATH } from "@/app/constants/routes";
+import { FormData, defaultFormData } from "./helpers";
+import {
+  checkPayloadEmptyFiels,
+  getFormDataErrors,
+  getFormDataPayload,
+  handleFormData,
+} from "@/app/utils/helpers";
+import { twMerge } from "tailwind-merge";
+import LoadingSpinner from "@/app/components/LoadingSpinner/LoadingSpinner";
 
 export default function Page() {
   const session = useSession();
   const router = useRouter();
-  const [data, setData] = useState({
-    email: "",
-    password: "",
-  });
+  const [formData, setFormData] = useState<FormData>(defaultFormData);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [successMessage, setSuccessMessage] = useState<boolean>(false);
+
+  const handleFrom = useCallback(
+    (key: string, attribute: string, value: unknown) => {
+      setFormData(handleFormData(formData, key, attribute, value));
+    },
+    [formData]
+  );
 
   useEffect(() => {
     if (session?.status === "authenticated") {
-      router.push("/dashboard");
+      if (successMessage) {
+        setTimeout(() => router.push(DASHBOARD_PATH), 1000);
+      } else {
+        router.push(DASHBOARD_PATH);
+      }
     }
   }, [session]);
 
-  const loginUser = async (e: any) => {
-    e.preventDefault();
-    signIn("credentials", { ...data, redirect: false }).then((callback) => {
-      if (callback?.error) {
-        // toast.error(callback.error);
-        alert(callback?.error);
-      }
-
-      if (callback?.ok && !callback?.error) {
-        alert("Logged in");
-      }
+  const handleLogin = async () => {
+    setLoading(true);
+    const payload = getFormDataPayload(formData);
+    const emptyFields = checkPayloadEmptyFiels(payload);
+    if (emptyFields.length) {
+      setFormData(getFormDataErrors(formData, emptyFields));
+      setLoading(false);
+      return;
+    }
+    const request = await signIn("credentials", {
+      ...payload,
+      redirect: false,
     });
+
+    if (request?.error) {
+      toast.error(request?.error, { theme: "colored" });
+      setLoading(false);
+      return;
+    }
+
+    setLoading(false);
+    setSuccessMessage(true);
   };
 
+  const {
+    email: {
+      label: emailLabel,
+      value: emailValue,
+      error: emailError,
+      required: emailRequired,
+    },
+    password: {
+      label: passwordLabel,
+      value: passwordValue,
+      error: passwordError,
+      required: passwordRequired,
+    },
+  } = formData;
+
   return (
-    <>
-      <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-          <img
-            className="mx-auto h-10 w-auto"
-            src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=600"
-            alt="Your Company"
+    <div className="h-screen grid place-items-center">
+      <div className="   bg-white p-4 rounded-xl drop-shadow-md md:w-2/5 relative">
+        {loading && <LoadingSpinner />}
+        {successMessage && (
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center text-center">
+            <IconCircleCheck className="h-20 w-20 text-sky-500" />
+            <div className="text-3xl">Usuario encontrado</div>
+            <div>Redireccionando...</div>
+          </div>
+        )}
+        <div
+          className={twMerge(
+            (loading || successMessage) && "blur-sm pointer-events-none"
+          )}
+        >
+          <IconLayoutDashboard className="h-8 w-8 md:h-12 md:w-12 text-sky-500 m-auto" />
+          <div className="font-rubik font-500 text-sky-500 text-center p-5 text-xl md:text-3xl">
+            NEXTJS APP
+          </div>
+          <Input
+            label={emailLabel}
+            placeholder={emailLabel}
+            required={emailRequired}
+            value={emailValue}
+            error={emailError}
+            onChange={(e) => handleFrom("email", "value", e.target.value)}
           />
-          <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
-            Sign in to your account
-          </h2>
-        </div>
-
-        <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-          <form className="space-y-6">
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium leading-6 text-gray-900"
-              >
-                Email address
-              </label>
-              <div className="mt-2">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  value={data.email}
-                  onChange={(e) => setData({ ...data, email: e.target.value })}
-                  required
-                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between">
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium leading-6 text-gray-900"
-                >
-                  Password
-                </label>
-                <div className="text-sm">
-                  <a
-                    href="#"
-                    className="font-semibold text-indigo-600 hover:text-indigo-500"
-                  >
-                    Forgot password?
-                  </a>
-                </div>
-              </div>
-              <div className="mt-2">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={data.password}
-                  onChange={(e) =>
-                    setData({ ...data, password: e.target.value })
-                  }
-                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                />
-              </div>
-            </div>
-
-            <div>
-              <button
-                onClick={loginUser}
-                className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-              >
-                Sign in
-              </button>
-            </div>
-          </form>
-          <h1>Sign into Github below</h1>
-          <button
-            onClick={() => signIn("github")}
-            className="bg-black text-white w-full"
-          >
-            Sign In
-          </button>
-          <h1>Sign into Google below</h1>
-          <button
-            onClick={() => signIn("google")}
-            className="bg-red-500 text-white w-full"
-          >
-            Sign In
-          </button>
-
-          <p className="mt-10 text-center text-sm text-gray-500">
-            Not a member?{" "}
-            <a
-              href="#"
-              className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500"
+          <Input
+            label={passwordLabel}
+            type="password"
+            placeholder={passwordLabel}
+            required={passwordRequired}
+            value={passwordValue}
+            error={passwordError}
+            onChange={(e) => handleFrom("password", "value", e.target.value)}
+          />
+          <div className="mt-4">
+            <Button variant="contained" fullWidth onClick={handleLogin}>
+              Iniciar sesión
+            </Button>
+            <Button
+              variant="default"
+              fullWidth
+              onClick={() => router.push(REGISTER_PATH)}
             >
-              Start a 14 day free trial
-            </a>
-          </p>
+              Registrarse
+            </Button>
+          </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

@@ -1,3 +1,5 @@
+# IMPORTANTE, CAMBIAR NPM POR YARN
+
 ## Set up
 
 ---
