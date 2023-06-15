@@ -14,14 +14,40 @@ import (
 	"bytes"
 )
 
-type Medicion struct {
-    Datetime time.Time `json:"Datetime" time_format:"2006-01-02 15:04:05"`
-    Sensor   string    `json:"Sensor"`
-    Sector   string    `json:"Sector"`
-    Presion  int       `json:"Presion"`
+type Measurement struct {
+    Datetime time.Time `json:"datetime" time_format:"2006-01-02 15:04:05"`
+    Sensor   string    `json:"sensor"`
+    Sector   string    `json:"sector"`
+    Pressure  int      `json:"pressure"`
 }
 
+type Sensor struct {
+    Sensor   string    `json:"sensor"`
+    Sector   string    `json:"sector"`
+    MinPressure  int   `json:"min_pressure"`
+	Coord 	 string    `json:"coord"` 
+}
+
+type Sector struct {
+    Sector   string    `json:"sector"`
+	Coord1   string    `json:"coord_1"`
+	Coord2   string    `json:"coord_2"`
+	Coord3   string    `json:"coord_3"`
+	Coord4   string    `json:"coord_4"`
+}
+
+type Suscribe struct {
+    Sector   Sector    `json:"Sector"`
+    Queue    string    `json:"Queue"`
+}
+
+
 var SECTOR_NAME = os.Getenv("SECTOR_NAME")
+var COORD_1 = os.Getenv("COORD_1")
+var COORD_2 = os.Getenv("COORD_1")
+var COORD_3 = os.Getenv("COORD_1")
+var COORD_4 = os.Getenv("COORD_1")
+
 var QUEUE_HOST = os.Getenv("QUEUE_HOST")
 var channelQueue *amqp.Channel
 var queue amqp.Queue
@@ -79,16 +105,48 @@ func main() {
 	
 	go alertCentral()
 
-	r.PUT("/Medicion", func(c *gin.Context) {
-		var medicion Medicion
-		// Deserializar el body JSON en la struct Medicion
-		if err := c.ShouldBindJSON(&medicion); err != nil {
+	r.PUT("/Sensor/Suscribe", func(c *gin.Context) {
+		var sensor Sensor
+
+		if err := c.ShouldBindJSON(&sensor); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		body, err := json.Marshal(medicion)
+		body, err := json.Marshal(sensor)
 		if err != nil {
-			log.Fatalf("Error serializing medicion to JSON: %v", err)
+			log.Fatalf("Error serializing sensor to JSON: %v", err)
+		}
+
+		// Send sensor to central-server
+
+		req, http_err := http.NewRequest("POST", "http://central-server:8080/AddSensor", bytes.NewBuffer(body))
+		if http_err != nil {
+			log.Fatal("Error al crear la solicitud:", http_err)
+			log.Printf("ERROR HTTP")
+		}
+		req.Header.Set("Content-Type", "application/json")
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			log.Fatal("Error al enviar la solicitud:", err)
+		}
+		resp.Body.Close()
+
+		return
+	})
+
+
+	r.PUT("/Measurement", func(c *gin.Context) {
+		var measurement Measurement
+		// Deserializar el body JSON en la struct Measurement
+		if err := c.ShouldBindJSON(&measurement); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		body, err := json.Marshal(measurement)
+		if err != nil {
+			log.Fatalf("Error serializing measurement to JSON: %v", err)
 		}
 
 		err = channelQueue.Publish(
@@ -113,17 +171,23 @@ func main() {
 	r.Run() // listen and serve on 0.0.0.0:8080
 }
 
-type Suscribe struct {
-    Sector   string    `json:"Sector"`
-    Queue    string    `json:"Queue"`
-}
+
+
 
 func alertCentral(){
 	for{
 
+		sector := Sector{
+			Sector: SECTOR_NAME,
+			Coord1: COORD_1,
+			Coord2: COORD_2,
+			Coord3: COORD_3,
+			Coord4: COORD_4,
+		}
+
 		suscribe := Suscribe{
 			Queue:  QUEUE_HOST,
-			Sector: SECTOR_NAME,
+			Sector: sector,
 		}
 
 		// Convertir la estructura a JSON

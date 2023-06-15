@@ -7,6 +7,10 @@ services:
       - SECTOR_NAME=sector-server-a
       - QUEUE_HOST=queue1
       - QUEUE_NAME=queue1
+      - COORD_1=-34.91739651002616, -56.16210771871581
+      - COORD_2=-34.91520592550176, -56.15995194170265
+      - COORD_3=-34.915812960803784, -56.15930842617635
+      - COORD_4=-34.91799473178162, -56.161485653707054
     depends_on:
       queue1:
         condition: service_healthy
@@ -17,6 +21,8 @@ services:
     environment:
       - SECTOR_NAME=sector-server-a
       - SENSOR_NAME=sensor-1a
+      - COORD=-34.91689987581042, -56.16092258868043
+      - MIN_PRESSURE=70 
     depends_on:
       - sector-server-a
 
@@ -41,6 +47,7 @@ services:
         condition: service_healthy
     ports:
       - "80:8080"
+    
 
   ## Central DB
   central-db:
