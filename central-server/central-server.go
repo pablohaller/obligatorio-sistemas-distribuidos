@@ -40,10 +40,7 @@ type Sensor struct {
 
 type Sector struct {
     Sector   string    `json:"sector"`
-	Coord1   string    `json:"coord_1"`
-	Coord2   string    `json:"coord_2"`
-	Coord3   string    `json:"coord_3"`
-	Coord4   string    `json:"coord_4"`
+	Coords   string    `json:"coords"`
 }
 
 
@@ -136,7 +133,7 @@ func main() {
 			fmt.Println(fmt.Sprint(suscribe.Sector))
 		
 			// Preparar la sentencia SQL de inserción
-			stmt, err := db.Prepare("INSERT INTO sectors (sector, coord_1, coord_2, coord_3, coord_4) VALUES ($1, $2, $3, $4, $5)")
+			stmt, err := db.Prepare("INSERT INTO sectors (sector, coords) VALUES ($1, $2)")
 			if err != nil {
 				log.Printf("Error al preparar la sentencia SQL: %v", err)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo preparar el statement de la insercion"})
@@ -145,7 +142,7 @@ func main() {
 			defer stmt.Close()
 		
 			// Ejecutar la sentencia SQL con los valores de la medición
-			_, err = stmt.Exec(suscribe.Sector.Sector,suscribe.Sector.Coord1,suscribe.Sector.Coord2,suscribe.Sector.Coord3,suscribe.Sector.Coord4)
+			_, err = stmt.Exec(suscribe.Sector.Sector,suscribe.Sector.Coords)
 			if err != nil {
 				log.Printf("Error al ejecutar la sentencia SQL: %v", err)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo insertar la medición en la base de datos"})

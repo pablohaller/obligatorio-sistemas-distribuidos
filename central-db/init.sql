@@ -3,10 +3,7 @@ CREATE ROLE IF NOT EXISTS repl_user;
 
 CREATE TABLE IF NOT EXISTS Sectors (
     sector VARCHAR(15),
-    coord_1 VARCHAR(50),
-    coord_2 VARCHAR(50),
-    coord_3 VARCHAR(50),
-    coord_4 VARCHAR(50),
+    coords text,
     PRIMARY KEY (sector)
 );
 

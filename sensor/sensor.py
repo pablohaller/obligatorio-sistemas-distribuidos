@@ -36,7 +36,7 @@ headersSensor = {
 # START AddSensor Request #
 
 MAX_RETRIES = 5
-RETRY_DELAY = 3
+RETRY_DELAY = 5
 
 retries = 0
 while retries < MAX_RETRIES:
@@ -48,6 +48,7 @@ while retries < MAX_RETRIES:
         if response.status_code == 200:
             print("Solicitud de agregar sensor exitosa")
             logging.info("Solicitud de agregar sensor exitosa")
+            break
         else:
             print("Error en la solicitud:"+ response.status_code)
             logging.error("Error en la solicitud de agregar sensor:" + response.status_code)

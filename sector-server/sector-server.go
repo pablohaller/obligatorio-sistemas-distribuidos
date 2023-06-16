@@ -30,10 +30,7 @@ type Sensor struct {
 
 type Sector struct {
     Sector   string    `json:"sector"`
-	Coord1   string    `json:"coord_1"`
-	Coord2   string    `json:"coord_2"`
-	Coord3   string    `json:"coord_3"`
-	Coord4   string    `json:"coord_4"`
+	Coords   string    `json:"coords"`
 }
 
 type Suscribe struct {
@@ -43,10 +40,7 @@ type Suscribe struct {
 
 
 var SECTOR_NAME = os.Getenv("SECTOR_NAME")
-var COORD_1 = os.Getenv("COORD_1")
-var COORD_2 = os.Getenv("COORD_1")
-var COORD_3 = os.Getenv("COORD_1")
-var COORD_4 = os.Getenv("COORD_1")
+var COORDS = os.Getenv("COORDS")
 
 var QUEUE_HOST = os.Getenv("QUEUE_HOST")
 var channelQueue *amqp.Channel
@@ -179,10 +173,7 @@ func alertCentral(){
 
 		sector := Sector{
 			Sector: SECTOR_NAME,
-			Coord1: COORD_1,
-			Coord2: COORD_2,
-			Coord3: COORD_3,
-			Coord4: COORD_4,
+			Coords: COORDS,
 		}
 
 		suscribe := Suscribe{
