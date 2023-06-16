@@ -17,19 +17,49 @@ import (
 )
 
 var DB_CONN_STRING = os.Getenv("DB_CONN_STRING")
-var MIRROR_DB_SERVER_HOST = os.Getenv("MIRROR_DB_SERVER_HOST")
 
-type Medicion struct {
-    Datetime time.Time `json:"Datetime" time_format:"2006-01-02 15:04:05"`
-    Sensor   string    `json:"Sensor"`
-    Sector   string    `json:"Sector"`
-    Presion  int       `json:"Presion"`
+type Measurement struct {
+    Datetime time.Time `json:"datetime" time_format:"2006-01-02 15:04:05"`
+    Sensor   string    `json:"sensor"`
+    Sector   string    `json:"sector"`
+    Pressure  float32       `json:"pressure"`
 }
 
 type Suscribe struct {
-    Sector   string    `json:"Sector"`
-    Queue    string    `json:"Queue"`
+    Sector   Sector    `json:"sector"`
+    Queue    string    `json:"queue"`
 }
+
+type Sensor struct {
+    Sensor   string    `json:"sensor"`
+    Sector   string    `json:"sector"`
+    MinPressure  float32   `json:"min_pressure"`
+	Coord 	 string    `json:"coord"` 
+}
+
+type Sector struct {
+    Sector   string    `json:"sector"`
+	Coords   string    `json:"coords"`
+}
+
+type MeasurementData struct {
+	Datetime time.Time 		`json:"datetime" time_format:"2006-01-02 15:04:05"`
+	Pressure  float32       `json:"pressure"`
+}
+
+
+type SectorMap struct {
+	Coords   string    		`json:"coords"`
+	Sensors []SensorMap	`json:"sensors"`
+}
+
+type SensorMap struct {
+	Sensor   string    `json:"sensor"`
+	Coord 	 string    `json:"coord"` 
+}
+
+
+
 
 var consumiendo []string
 
@@ -48,9 +78,56 @@ func main() {
 		
 	})
 
+	r.POST("/AddSensor", func(c *gin.Context) {
+		var sensor Sensor
+		if err := c.ShouldBindJSON(&sensor); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		
+		// Add sensor to central-db
+
+		fmt.Println(fmt.Sprint(sensor))
+
+		var found bool
+		// Recorrer el array de strings
+		for _, str := range consumiendo {
+			// Comparar el elemento actual con el valor deseado
+			if str == sensor.Sector {
+				// Se encontró el valor deseado
+				found = true
+				break
+			}
+		}
+		
+		if found {
+			// Preparar la sentencia SQL de inserción
+			stmt, err := db.Prepare("INSERT INTO sensors (sensor, sector, min_pressure, coord) VALUES ($1, $2, $3, $4) ON CONFLICT (sensor,sector) DO NOTHING;")
+			if err != nil {
+				log.Printf("Error al preparar la sentencia SQL: %v", err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo preparar el statement de la insercion"})
+				return
+			}
+			defer stmt.Close()
+		
+			// Ejecutar la sentencia SQL con los valores de la medición
+			_, err = stmt.Exec(sensor.Sensor, sensor.Sector, sensor.MinPressure, sensor.Coord)
+			if err != nil {
+				log.Printf("Error al ejecutar la sentencia SQL: %v", err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo insertar la medición en la base de datos"})
+				return
+			}
+		
+			c.Status(http.StatusOK)
+		}else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "El sector no se encuentra registrado"})
+		}
+	})
+
 	r.POST("/Sector/Suscribe", func(c *gin.Context) {
 		var found bool
 		var suscribe Suscribe
+		log.Printf("Starting /Sector/Suscribe:", suscribe.Sector.Sector)
 		if err := c.ShouldBindJSON(&suscribe); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -58,7 +135,7 @@ func main() {
 		// Recorrer el array de strings
 		for _, str := range consumiendo {
 			// Comparar el elemento actual con el valor deseado
-			if str == suscribe.Sector {
+			if str == suscribe.Sector.Sector {
 				// Se encontró el valor deseado
 				found = true
 				break
@@ -66,47 +143,369 @@ func main() {
 		}
 		if !found {
 			go consumer(suscribe.Queue+ ":5672")
-			consumiendo = append(consumiendo, suscribe.Sector)
+			consumiendo = append(consumiendo, suscribe.Sector.Sector)
+
+			// Add sector to central-db
+		
+			fmt.Println(fmt.Sprint(suscribe.Sector))
+		
+			// Preparar la sentencia SQL de inserción
+			stmt, err := db.Prepare("INSERT INTO sectors (sector, coords) VALUES ($1, $2) ON CONFLICT (sector) DO NOTHING;")
+			if err != nil {
+				log.Printf("Error al preparar la sentencia SQL: %v", err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo preparar el statement de la insercion"})
+				return
+			}
+			defer stmt.Close()
+		
+			// Ejecutar la sentencia SQL con los valores de la medición
+			_, err = stmt.Exec(suscribe.Sector.Sector,suscribe.Sector.Coords)
+			if err != nil {
+				log.Printf("Error al ejecutar la sentencia SQL: %v", err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo insertar la medición en la base de datos"})
+				return
+			}
+			log.Println("Se ha ejecutado la insercion de sector de forma exitosa.")
+		
+			c.Status(http.StatusOK)
+			return
+
 			c.JSON(http.StatusCreated, suscribe.Queue)
-			log.Printf(suscribe.Sector + " se suscribio para ser consumido")
+			log.Printf(suscribe.Sector.Sector + " se suscribio para ser consumido")
 		}else{
 			c.JSON(http.StatusOK, "Already consuming")
-			log.Printf(suscribe.Sector + " ya esta suscripto")
+			log.Printf(suscribe.Sector.Sector + " ya esta suscripto")
 		}
 	})
 
-	// Definir el endpoint "/Mediciones" con un parámetro de ruta para los minutos
-	r.GET("/UltMediciones/:minutos", func(c *gin.Context) {
-		// Obtener el valor de los minutos desde la URL
-		minutosStr := c.Param("minutos")
-		minutos, err := strconv.Atoi(minutosStr)
+	// Agregar en mirror
+	r.GET("/Sectors", func(c *gin.Context) {
+		//Para la lectura de la base de datos:
+		rows, err := db.Query("SELECT * FROM sectors")
+		if err != nil {
+			fmt.Println("Error al preparar la sentencia SQL:", err)
+		}
+		defer rows.Close() // remember to close the rows object when done
+
+		// Slice para guardar las mediciones
+		var sectors []Sector
+
+		// Recorrer el resultado de la consulta y guardar los valores en las estructuras de tipo Medicion
+		for rows.Next() {
+			var sector Sector
+			err = rows.Scan(&sector.Sector, &sector.Coords)
+			if err != nil {
+				fmt.Println("Error al leer la consulta:", err)
+				c.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+			// Agregar la medición al slice
+			sectors = append(sectors, sector)
+		}
+		// Si hubo algún error al recorrer los resultados
+		if err = rows.Err(); err != nil {
+			fmt.Println("Error al recorrer los resultados de la consulta:", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+	
+		// Devolver las sectores como JSON
+		c.JSON(http.StatusOK, sectors)
+	})
+
+	// Agregar en mirror
+	r.GET("/Sensors", func(c *gin.Context) {
+		//Para la lectura de la base de datos:
+		rows, err := db.Query("SELECT * FROM sensors")
+		if err != nil {
+			fmt.Println("Error al preparar la sentencia SQL:", err)
+		}
+		defer rows.Close() // remember to close the rows object when done
+
+		// Slice para guardar las mediciones
+		var sensors []Sensor
+
+		// Recorrer el resultado de la consulta y guardar los valores en las estructuras de tipo Medicion
+		for rows.Next() {
+			var sensor Sensor
+			err = rows.Scan(&sensor.Sensor, &sensor.Sector, &sensor.MinPressure, &sensor.Coord)
+			if err != nil {
+				fmt.Println("Error al leer la consulta:", err)
+				c.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+			// Agregar la medición al slice
+			sensors = append(sensors, sensor)
+		}
+		// Si hubo algún error al recorrer los resultados
+		if err = rows.Err(); err != nil {
+			fmt.Println("Error al recorrer los resultados de la consulta:", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+	
+		// Devolver las sensores como JSON
+		c.JSON(http.StatusOK, sensors)
+	})
+
+	r.GET("/MapReport", func(c *gin.Context){
+
+		var measurement Measurement
+		
+		if err := c.ShouldBindJSON(&measurement); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		stmt, err := db.Prepare("SELECT * FROM sectors WHERE \"sector\" = $1")
+		if err != nil {
+			log.Printf("Error al preparar la sentencia SQL: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo preparar el statement del select"})
+			return
+		}
+		defer stmt.Close()
+
+		// Ejecutar la sentencia SQL con los valores de la medición
+		rows, err := stmt.Query(measurement.Sector)
+		if err != nil {
+			log.Printf("Error al ejecutar la sentencia SQL: %v", err)
+			return
+		}
+		defer rows.Close() // remember to close the rows object when done 
+
+		var sectorMap SectorMap
+		for rows.Next() {
+			var sector Sector
+			err = rows.Scan(&sector.Sector, &sector.Coords)
+			if err != nil {
+				fmt.Println("Error al leer la consulta:", err)
+				c.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+			sectorMap = SectorMap{
+				Coords: sector.Coords,
+				Sensors: []SensorMap{},
+			}
+		}
+		// Si hubo algún error al recorrer los resultados
+		if err = rows.Err(); err != nil {
+			fmt.Println("Error al recorrer los resultados de la consulta:", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		stmt, err = db.Prepare("SELECT * FROM sensors WHERE \"sensor\" = $1")
+		if err != nil {
+			log.Printf("Error al preparar la sentencia SQL: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo preparar el statement del select"})
+			return
+		}
+		defer stmt.Close()
+
+		// Ejecutar la sentencia SQL con los valores de la medición
+		rows, err = stmt.Query(measurement.Sensor)
+		if err != nil {
+			log.Printf("Error al ejecutar la sentencia SQL: %v", err)
+			return
+		}
+
+		for rows.Next() {
+			var sensor Sensor
+			err = rows.Scan(&sensor.Sensor, &sensor.Sector,&sensor.MinPressure,&sensor.Coord)
+			if err != nil {
+				fmt.Println("Error al leer la consulta:", err)
+				c.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+			
+			sectorMap.Sensors = append(sectorMap.Sensors, SensorMap{
+				Sensor: sensor.Sensor,
+				Coord : sensor.Coord,
+			})
+		}
+		// Si hubo algún error al recorrer los resultados
+		if err = rows.Err(); err != nil {
+			fmt.Println("Error al recorrer los resultados de la consulta:", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+		
+		c.JSON(http.StatusOK, sectorMap)
+	})
+
+	// Agregar en mirror
+	r.GET("/Map", func(c *gin.Context) {
+		//Para la lectura de la base de datos:
+		
+		rows, err := db.Query("SELECT * FROM sectors ")
+		if err != nil {
+			fmt.Println("Error al preparar la sentencia SQL:", err)
+		}
+		defer rows.Close() // remember to close the rows object when done
+
+		// Slice para guardar las mediciones
+		dict := map[string]SectorMap{}
+		// Recorrer el resultado de la consulta y guardar los valores en las estructuras de tipo Medicion
+		for rows.Next() {
+			var sector Sector
+			err = rows.Scan(&sector.Sector, &sector.Coords)
+			if err != nil {
+				fmt.Println("Error al leer la consulta:", err)
+				c.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+			// Agregar la medición al slice
+
+			dict[sector.Sector] = SectorMap{
+				Coords : sector.Coords,
+				Sensors: []SensorMap{},
+			}
+		}
+		// Si hubo algún error al recorrer los resultados
+		if err = rows.Err(); err != nil {
+			fmt.Println("Error al recorrer los resultados de la consulta:", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		//Para la lectura de la base de datos:
+		rows, err = db.Query("SELECT * FROM sensors")
+		if err != nil {
+			fmt.Println("Error al preparar la sentencia SQL:", err)
+		}
+		defer rows.Close() // remember to close the rows object when done
+
+		// Recorrer el resultado de la consulta y guardar los valores en las estructuras de tipo Medicion
+		for rows.Next() {
+			var sensor Sensor
+			err = rows.Scan(&sensor.Sensor, &sensor.Sector, &sensor.MinPressure, &sensor.Coord)
+			if err != nil {
+				fmt.Println("Error al leer la consulta:", err)
+				c.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+			
+			SensorMap := SensorMap{
+				Sensor: sensor.Sensor,
+				Coord: sensor.Coord,
+			}
+
+			sensors := append(dict[sensor.Sector].Sensors, SensorMap)
+
+			dict[sensor.Sector] = SectorMap{
+				Coords: dict[sensor.Sector].Coords,
+				Sensors: sensors,
+			}
+		}
+		// Si hubo algún error al recorrer los resultados
+		if err = rows.Err(); err != nil {
+			fmt.Println("Error al recorrer los resultados de la consulta:", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+		
+		// Devolver el diccionario como JSON
+		c.JSON(http.StatusOK, dict)
+	})
+	
+
+	// Agregar en mirror
+	r.GET("LastSectorMeasurements/:sector/:minutes", func(c *gin.Context) {
+		// Obtener el valor de los minutes desde la URL
+		minutesStr := c.Param("minutes")
+		sectorStr := c.Param("sector")
+		_, err := strconv.Atoi(minutesStr)
 		if err != nil {
 			// Manejar el error si no se puede convertir a entero
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Valor inválido para minutos"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Valor inválido para minutes"})
+			return
+		}
+
+		// Preparar la sentencia: SELECT * FROM measurements WHERE sector = 'sector-server-a' and datetime >= (SELECT NOW() - INTERVAL '3 hours') - INTERVAL '2 minutes'
+
+		stmt, err := db.Prepare("SELECT * FROM measurements WHERE \"sector\" = $1 and \"datetime\" >= (SELECT NOW() - INTERVAL '3 hours') - INTERVAL '" + minutesStr + " minutes'")
+		if err != nil {
+			log.Printf("Error al preparar la sentencia SQL: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo preparar el statement del select"})
+			return
+		}
+		defer stmt.Close()
+
+		// Ejecutar la sentencia SQL con los valores de la medición
+		rows, err := stmt.Query(sectorStr)
+		if err != nil {
+			log.Printf("Error al ejecutar la sentencia SQL: %v", err)
+			return
+		}
+		defer rows.Close() // remember to close the rows object when done 
+
+		dict := map[string][]MeasurementData{}
+		// Recorrer el resultado de la consulta y guardar los valores en las estructuras de tipo Medicion
+		for rows.Next() {
+			var measurement Measurement
+			err = rows.Scan(&measurement.Datetime, &measurement.Sensor, &measurement.Sector, &measurement.Pressure)
+			if err != nil {
+				fmt.Println("Error al leer la consulta:", err)
+				c.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+			
+			md := MeasurementData{
+				Datetime: measurement.Datetime,
+				Pressure: measurement.Pressure,
+			}
+
+			value, ok := dict[measurement.Sensor]
+			if ok {
+				dict[measurement.Sensor] = append(value, md)
+			} else {
+				list := []MeasurementData{}
+				list = append(list, md)
+				dict[measurement.Sensor] = list
+			}
+		}
+		// Si hubo algún error al recorrer los resultados
+		if err = rows.Err(); err != nil {
+			fmt.Println("Error al recorrer los resultados de la consulta:", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+		
+		c.JSON(http.StatusOK, dict)
+	})
+
+	// Definir el endpoint "/Measurement" con un parámetro de ruta para los minutes
+	r.GET("/LastMeasurements/:minutes", func(c *gin.Context) {
+		// Obtener el valor de los minutes desde la URL
+		minutesStr := c.Param("minutes")
+		_, err := strconv.Atoi(minutesStr)
+		if err != nil {
+			// Manejar el error si no se puede convertir a entero
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Valor inválido para minutes"})
 			return
 		}
 
 		//Para la lectura de la base de datos:
-		rows, err := db.Query("SELECT * FROM mediciones WHERE \"datetime\" >= (SELECT NOW() - INTERVAL '3 hours') - INTERVAL '" + strconv.Itoa(minutos) + " minutes'")
+		rows, err := db.Query("SELECT * FROM measurements WHERE \"datetime\" >= (SELECT NOW() - INTERVAL '3 hours') - INTERVAL '" + minutesStr + " minutes'")
 		if err != nil {
 			fmt.Println("Error al preparar la sentencia SQL:", err)
 		}
 		defer rows.Close() // remember to close the rows object when done
 
-		// Slice para guardar las mediciones
-		var mediciones []Medicion
+		// Slice para guardar las measurements
+		var measurements []Measurement
 
 		// Recorrer el resultado de la consulta y guardar los valores en las estructuras de tipo Medicion
 		for rows.Next() {
-			var medicion Medicion
-			err = rows.Scan(&medicion.Datetime, &medicion.Sensor, &medicion.Sector, &medicion.Presion)
+			var measurement Measurement
+			err = rows.Scan(&measurement.Datetime, &measurement.Sensor, &measurement.Sector, &measurement.Pressure)
 			if err != nil {
-				fmt.Println("Error al preparar la sentencia SQL:", err)
+				fmt.Println("Error al leer la consulta:", err)
 				c.AbortWithStatus(http.StatusInternalServerError)
 				return
 			}
 			// Agregar la medición al slice
-			mediciones = append(mediciones, medicion)
+			measurements = append(measurements, measurement)
 		}
 		// Si hubo algún error al recorrer los resultados
 		if err = rows.Err(); err != nil {
@@ -116,31 +515,31 @@ func main() {
 		}
 	
 		// Devolver las mediciones como JSON
-		c.JSON(http.StatusOK, mediciones)
+		c.JSON(http.StatusOK, measurements)
 	})
 
-	r.GET("/Mediciones", func(c *gin.Context) {
+	r.GET("/Measurement", func(c *gin.Context) {
 		//Para la lectura de la base de datos:
-		rows, err := db.Query("SELECT * FROM mediciones")
+		rows, err := db.Query("SELECT * FROM measurements")
 		if err != nil {
 			fmt.Println("Error al preparar la sentencia SQL:", err)
 		}
 		defer rows.Close() // remember to close the rows object when done
 
 		// Slice para guardar las mediciones
-		var mediciones []Medicion
+		var measurements []Measurement
 
 		// Recorrer el resultado de la consulta y guardar los valores en las estructuras de tipo Medicion
 		for rows.Next() {
-			var medicion Medicion
-			err = rows.Scan(&medicion.Datetime, &medicion.Sensor, &medicion.Sector, &medicion.Presion)
+			var measurement Measurement
+			err = rows.Scan(&measurement.Datetime, &measurement.Sensor, &measurement.Sector, &measurement.Pressure)
 			if err != nil {
-				fmt.Println("Error al preparar la sentencia SQL:", err)
+				fmt.Println("Error al leer la consulta:", err)
 				c.AbortWithStatus(http.StatusInternalServerError)
 				return
 			}
 			// Agregar la medición al slice
-			mediciones = append(mediciones, medicion)
+			measurements = append(measurements, measurement)
 		}
 		// Si hubo algún error al recorrer los resultados
 		if err = rows.Err(); err != nil {
@@ -150,24 +549,24 @@ func main() {
 		}
 	
 		// Devolver las mediciones como JSON
-		c.JSON(http.StatusOK, mediciones)
+		c.JSON(http.StatusOK, measurements)
 	})
 	
 
-	r.PUT("/Mediciones", func(c *gin.Context) {
-		var medicion Medicion
+	r.PUT("/Measurements", func(c *gin.Context) {
+		var measurement Measurement
 	
 		// Deserializar el body JSON en la struct Medicion
-		if err := c.ShouldBindJSON(&medicion); err != nil {
+		if err := c.ShouldBindJSON(&measurement); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 	
 		// Insertar en la base de datos
-		fmt.Println(fmt.Sprint(medicion))
+		fmt.Println(fmt.Sprint(measurement))
 	
 		// Preparar la sentencia SQL de inserción
-		stmt, err := db.Prepare("INSERT INTO mediciones(datetime, sensor, sector, presion) VALUES ($1, $2, $3, $4)")
+		stmt, err := db.Prepare("INSERT INTO measurements (datetime, sensor, sector, pressure) VALUES ($1, $2, $3, $4)")
 		if err != nil {
 			log.Printf("Error al preparar la sentencia SQL: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo preparar el statement de la insercion"})
@@ -176,7 +575,7 @@ func main() {
 		defer stmt.Close()
 	
 		// Ejecutar la sentencia SQL con los valores de la medición
-		_, err = stmt.Exec(medicion.Datetime, medicion.Sensor, medicion.Sector, medicion.Presion)
+		_, err = stmt.Exec(measurement.Datetime, measurement.Sensor, measurement.Sector, measurement.Pressure)
 		if err != nil {
 			log.Printf("Error al ejecutar la sentencia SQL: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo insertar la medición en la base de datos"})
@@ -187,35 +586,44 @@ func main() {
 		return
 	})
 
-	r.GET("/Alerta", func(c *gin.Context) {
-		var medicion Medicion
+	r.GET("/Alert", func(c *gin.Context) {
+		var measurement Measurement
 	
 		// Deserializar el body JSON en la struct Medicion
-		if err := c.ShouldBindJSON(&medicion); err != nil {
+		if err := c.ShouldBindJSON(&measurement); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+		
+		stmt, err := db.Prepare("SELECT * FROM measurements WHERE datetime >= $1 AND sensor = $2 AND sector = $3")
+		if err != nil {
+			log.Printf("Error al preparar la sentencia SQL: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo preparar el statement del select"})
+			return
+		}
+		defer stmt.Close()
+
 		//Para la lectura de la base de datos:
-		rows, err := db.Query("SELECT * FROM Mediciones WHERE datetime >= '"+ medicion.Datetime.Format("2006-01-02T15:04:05Z") +"' AND sensor = '"+medicion.Sensor+"' AND sector = '"+medicion.Sector+"';");
+		rows, err := stmt.Query(measurement.Datetime.Format("2006-01-02T15:04:05Z"),measurement.Sensor, measurement.Sector);
 		if err != nil {
 			fmt.Println("Error al preparar la sentencia SQL:", err)
 		}
 		defer rows.Close() // remember to close the rows object when done
 
 		// Slice para guardar las mediciones
-		var mediciones []Medicion
+		var measurements []Measurement
 
 		// Recorrer el resultado de la consulta y guardar los valores en las estructuras de tipo Medicion
 		for rows.Next() {
-			var medicion Medicion
-			err = rows.Scan(&medicion.Datetime, &medicion.Sensor, &medicion.Sector, &medicion.Presion)
+			var measurement Measurement
+			err = rows.Scan(&measurement.Datetime, &measurement.Sensor, &measurement.Sector, &measurement.Pressure)
 			if err != nil {
-				fmt.Println("Error al preparar la sentencia SQL:", err)
+				fmt.Println("Error al leer la consulta:", err)
 				c.AbortWithStatus(http.StatusInternalServerError)
 				return
 			}
 			// Agregar la medición al slice
-			mediciones = append(mediciones, medicion)
+			measurements = append(measurements, measurement)
 		}
 		// Si hubo algún error al recorrer los resultados
 		if err = rows.Err(); err != nil {
@@ -225,7 +633,7 @@ func main() {
 		}
 	
 		// Devolver las mediciones como JSON
-		c.JSON(http.StatusOK, mediciones)
+		c.JSON(http.StatusOK, measurements)
 		return
 	})
 	r.Run() // listen and serve on 0.0.0.0:8080
@@ -284,7 +692,7 @@ func consumer(queue string) {
 			// Crear una solicitud HTTP PUT con el cuerpo JSON y el encabezado "Content-Type: application/json"
 			body := bytes.NewBuffer(d.Body)
 
-			req, err := http.NewRequest("PUT", "http://central-server:8080/Mediciones", body)
+			req, err := http.NewRequest("PUT", "http://central-server:8080/Measurements", body)
 			req.Header.Set("Content-Type", "application/json")
 
 			// Enviar la solicitud y capturar la respuesta y el posible error

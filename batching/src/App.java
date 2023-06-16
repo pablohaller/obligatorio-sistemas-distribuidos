@@ -34,8 +34,8 @@ public class App {
         System.out.println("Servidor iniciado en el puerto " + port);  */
         while (true) {
 
-            String alertas = getAlertas();
-            if(alertas != ""){
+            String alerts = getAlerts();
+            if(alerts != ""){
                 URL url = new URL("http://" + webServer + ":3000/api/measures");
                 System.out.println(url);
 
@@ -50,7 +50,7 @@ public class App {
 
                 connection.setDoOutput(true);
                 OutputStream outputStream = connection.getOutputStream();
-                String data = "{\"data\":\"" + alertas.replace("\"","'") + "\", \"filtration\":true}";
+                String data = "{\"data\":\"" + alerts.replace("\"","'") + "\", \"filtration\":true}";
 
                 System.out.println("JSON QUE SE CARGA EN LA REQUEST:\n" + data);
                 outputStream.write(data.getBytes("UTF-8"));
@@ -66,14 +66,14 @@ public class App {
         }
     }
 
-    public static String getAlertas() {
+    public static String getAlerts() {
         String json = "";
         try {
             // Get the value of the environment variable
             String mirrorDbServer = System.getenv("MIRROR-DB-SERVER");
 
             // Create a URL object with the endpoint you want to send the request to
-            URL url = new URL("http://" + mirrorDbServer + ":8080/UltMediciones/" + pollingRate);
+            URL url = new URL("http://" + mirrorDbServer + ":8080/LastMeasurements/" + pollingRate);
             System.out.println(url);
 
             // Open a connection to the URL
@@ -111,38 +111,38 @@ public class App {
             e.printStackTrace();
         }
         if(json != ""){
-            return MedicionesToJson(filter(JsonToMediciones(json)));
+            return MeasurementsToJson(filter(JsonToMeasurements(json)));
         }
         return "";
     }
 
-    public static List<Medicion> JsonToMediciones(String jsonMediciones){
+    public static List<Measurement> JsonToMeasurements(String jsonMeasurements){
         ObjectMapper objectMapper = new ObjectMapper();
         // Parse JSON string into a JsonNode array
         JsonNode jsonNodeArray;
-        List<Medicion> mediciones = new LinkedList<>();
+        List<Measurement> measurements = new LinkedList<>();
         try {
-            jsonNodeArray = objectMapper.readTree(jsonMediciones);
+            jsonNodeArray = objectMapper.readTree(jsonMeasurements);
             for (JsonNode jsonNode : jsonNodeArray) {
                 // Convert individual object to a JSON string
-                String jsonMedicion = jsonNode.toString();
+                String jsonMeasurement = jsonNode.toString();
                 // Print the individual JSON string
-                mediciones.add(objectMapper.readValue(jsonMedicion, Medicion.class));
+                measurements.add(objectMapper.readValue(jsonMeasurement, Measurement.class));
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
         // Iterate over each object in the array    
-        return mediciones;
+        return measurements;
     }
 
-    public static String MedicionesToJson(List<Medicion> mediciones){
-        if (mediciones.size() > 0){
+    public static String MeasurementsToJson(List<Measurement> measurements){
+        if (measurements.size() > 0){
             // Crear una instancia de ObjectMapper
             ObjectMapper objectMapper = new ObjectMapper();
             try {
                 // Convertir la lista de objetos a JSON
-                String json = objectMapper.writeValueAsString(mediciones);
+                String json = objectMapper.writeValueAsString(measurements);
                 return json;
             } catch (JsonProcessingException e) {
                 e.printStackTrace();
@@ -151,74 +151,74 @@ public class App {
         return "";
     }
 
-    public static List<Medicion> filter(List <Medicion> mediciones) {
-        List<Medicion> filterList = new LinkedList<>();
-        System.out.println("cantidad de mediciones: " + mediciones.size());
-        for (Medicion m : mediciones) {
-            if (m.getPresion() < 70 && !sensoresEnFuga.contains(m.sector + m.sensor)) {// 70 valor arbitrario para ver si anda JAVA
+    public static List<Measurement> filter(List <Measurement> measurements) {
+        List<Measurement> filterList = new LinkedList<>();
+        System.out.println("cantidad de measurements: " + measurements.size());
+        for (Measurement m : measurements) {
+            if (m.getPressure() < 70 && !sensoresEnFuga.contains(m.sector + m.sensor)) {// 70 valor arbitrario para ver si anda JAVA
                 filterList.add(m);
                 sensoresEnFuga.add(m.sector + m.sensor);
             }
         }
-        System.out.println("Mediciones que quedaron despues de filtrar: "+filterList.size());
+        System.out.println("Measurements que quedaron despues de filtrar: "+filterList.size());
         return filterList;
     }
 
 
-    public static class Medicion {
+    public static class Measurement {
 
         private String datetime;
         private String sensor;  
         private String sector;
-        private int presion;
+        private int pressure;
 
-        public Medicion (){};
+        public Measurement (){};
 
-        public Medicion (String datetime, String sensor, String sector, int presion) {
+        public Measurement (String datetime, String sensor, String sector, int pressure) {
             this.datetime = datetime;
             this.sensor = sensor;
             this.sector = sector;
-            this.presion = presion;
+            this.pressure = pressure;
         }
     
-        @JsonProperty("Datetime")
+        @JsonProperty("datetime")
         public void setDatetime(String datetime) {
             this.datetime = datetime;
         }
         
-        @JsonProperty("Datetime")
+        @JsonProperty("datetime")
         public String getDatetime() {
             return datetime;
         }
     
-        @JsonProperty("Sensor")
+        @JsonProperty("sensor")
         public void setSensor(String sensor) {
             this.sensor = sensor;
         }
 
-        @JsonProperty("Sensor")
+        @JsonProperty("sensor")
         public String getSensor() {
             return sensor;
         }
     
-        @JsonProperty("Sector")
+        @JsonProperty("sector")
         public void setSector(String sector) {
             this.sector = sector;
         }
 
-        @JsonProperty("Sector")
+        @JsonProperty("sector")
         public String getSector() {
             return sector;
         }
     
-        @JsonProperty("Presion")
-        public void setPresion(int presion) {
-            this.presion = presion;
+        @JsonProperty("pressure")
+        public void setPressure(int pressure) {
+            this.pressure = pressure;
         }
 
-        @JsonProperty("Presion")
-        public int getPresion() {
-            return presion;
+        @JsonProperty("pressure")
+        public int getPressure() {
+            return pressure;
         }
     }
     
@@ -226,7 +226,7 @@ public class App {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             // Lógica para manejar la solicitud GET y devolver la respuesta
-            String response = App.getAlertas();
+            String response = App.getAlerts();
             exchange.sendResponseHeaders(200, response.length());
             OutputStream outputStream = exchange.getResponseBody();
             outputStream.write(response.getBytes());
