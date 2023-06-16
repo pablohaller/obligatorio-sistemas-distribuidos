@@ -36,7 +36,6 @@ services:
       - QUEUE_HOST=queue1
       - QUEUE_NAME=queue1
       - DB_CONN_STRING=postgresql://my_user:my_password@central-db:5432/central-db?sslmode=disable
-      - MIRROR_DB_SERVER_HOST=mirror-db-server
     depends_on:
       queue1:
         condition: service_healthy
@@ -213,11 +212,13 @@ services:
 #     depends_on:
 #       - sector-server-b
 
-#   # Sector Sensor
-#   sector-sensor-2a:
-#     build: ./sensor
-#     environment:
-#       - SECTOR_NAME=sector-server-a
-#       - SENSOR_NAME=sensor-2a
-#     depends_on:
-#       - sector-server-a
+  # Sector Sensor
+  sector-sensor-2a:
+    build: ./sensor
+    environment:
+      - SECTOR_NAME=sector-server-a
+      - SENSOR_NAME=sensor-2a
+      - COORD=-34.91689987581040, -56.16092258868040
+      - MIN_PRESSURE=75 
+    depends_on:
+      - sector-server-a
