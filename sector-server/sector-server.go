@@ -18,13 +18,13 @@ type Measurement struct {
     Datetime time.Time `json:"datetime" time_format:"2006-01-02 15:04:05"`
     Sensor   string    `json:"sensor"`
     Sector   string    `json:"sector"`
-    Pressure  int      `json:"pressure"`
+    Pressure  float32      `json:"pressure"`
 }
 
 type Sensor struct {
     Sensor   string    `json:"sensor"`
     Sector   string    `json:"sector"`
-    MinPressure  int   `json:"min_pressure"`
+    MinPressure  float32   `json:"min_pressure"`
 	Coord 	 string    `json:"coord"` 
 }
 

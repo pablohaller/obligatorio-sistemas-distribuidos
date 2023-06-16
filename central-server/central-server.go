@@ -74,31 +74,46 @@ func main() {
 		// Add sensor to central-db
 
 		fmt.Println(fmt.Sprint(sensor))
-	
-		// Preparar la sentencia SQL de inserción
-		stmt, err := db.Prepare("INSERT INTO sensors (sensor, sector, min_pressure, coord) VALUES ($1, $2, $3, $4)")
-		if err != nil {
-			log.Printf("Error al preparar la sentencia SQL: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo preparar el statement de la insercion"})
-			return
+
+		var found bool
+		// Recorrer el array de strings
+		for _, str := range consumiendo {
+			// Comparar el elemento actual con el valor deseado
+			if str == sensor.Sector {
+				// Se encontró el valor deseado
+				found = true
+				break
+			}
 		}
-		defer stmt.Close()
-	
-		// Ejecutar la sentencia SQL con los valores de la medición
-		_, err = stmt.Exec(sensor.Sensor, sensor.Sensor, sensor.MinPressure, sensor.Coord)
-		if err != nil {
-			log.Printf("Error al ejecutar la sentencia SQL: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo insertar la medición en la base de datos"})
-			return
+		
+		if found {
+			// Preparar la sentencia SQL de inserción
+			stmt, err := db.Prepare("INSERT INTO sensors (sensor, sector, min_pressure, coord) VALUES ($1, $2, $3, $4)")
+			if err != nil {
+				log.Printf("Error al preparar la sentencia SQL: %v", err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo preparar el statement de la insercion"})
+				return
+			}
+			defer stmt.Close()
+		
+			// Ejecutar la sentencia SQL con los valores de la medición
+			_, err = stmt.Exec(sensor.Sensor, sensor.Sector, sensor.MinPressure, sensor.Coord)
+			if err != nil {
+				log.Printf("Error al ejecutar la sentencia SQL: %v", err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo insertar la medición en la base de datos"})
+				return
+			}
+		
+			c.Status(http.StatusOK)
+		}else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "El sector no se encuentra registrado"})
 		}
-	
-		c.Status(http.StatusOK)
-		return
 	})
 
 	r.POST("/Sector/Suscribe", func(c *gin.Context) {
 		var found bool
 		var suscribe Suscribe
+		log.Printf("Starting /Sector/Suscribe:", suscribe.Sector.Sector)
 		if err := c.ShouldBindJSON(&suscribe); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -136,6 +151,7 @@ func main() {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo insertar la medición en la base de datos"})
 				return
 			}
+			log.Println("Se ha ejecutado la insercion de sector de forma exitosa.")
 		
 			c.Status(http.StatusOK)
 			return

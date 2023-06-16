@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS Measurements (
     sensor VARCHAR(15),
     sector VARCHAR(15),
     pressure FLOAT,
-    FOREIGN KEY (sector, sensor) REFERENCES Sensors(sensor, sector),
+    FOREIGN KEY (sector, sensor) REFERENCES Sensors(sector, sensor),
     PRIMARY KEY (datetime, sensor, sector)
 );
 

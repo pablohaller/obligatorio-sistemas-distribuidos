@@ -127,35 +127,35 @@ services:
       - "5672"
 #####################################################################################################################
   
-  batch:
-      build: ./batching
-      environment:
-        - POLLING-RATE=1
-        - WEB-SERVER-HOST=webserver-next
-        - MIRROR-DB-SERVER=mirror-db-server
-      ports:
-        - '8082:8080'
-      depends_on:
-        - "mirror-db-server"
-        - "webserver-next"
+  # batch:
+  #     build: ./batching
+  #     environment:
+  #       - POLLING-RATE=1
+  #       - WEB-SERVER-HOST=webserver-next
+  #       - MIRROR-DB-SERVER=mirror-db-server
+  #     ports:
+  #       - '8082:8080'
+  #     depends_on:
+  #       - "mirror-db-server"
+  #       - "webserver-next"
 
-  webserver-next:
-    build: ./webserver-next
-    environment:
-      - NAME=WEBSERVER-NEXT
-    ports:
-      - "3000:3000"
-      - "5555:5555"
+  # webserver-next:
+  #   build: ./webserver-next
+  #   environment:
+  #     - NAME=WEBSERVER-NEXT
+  #   ports:
+  #     - "3000:3000"
+  #     - "5555:5555"
 #####################################################################################################################
 
 # Proxy Server
-  proxy-server:
-      build: ./proxy-server
-      depends_on:
-        - mirror-db-server
-        - central-server
-      ports:
-        - "8083:80"
+  # proxy-server:
+  #     build: ./proxy-server
+  #     depends_on:
+  #       - mirror-db-server
+  #       - central-server
+  #     ports:
+  #       - "8083:80"
 
   # mongo:
   #   image: mongo

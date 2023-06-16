@@ -7,6 +7,8 @@ import os
 import pytz
 import logging
 
+logging.basicConfig(level=logging.DEBUG)  # Set the log level to DEBUG
+
 SectorName = os.environ.get("SECTOR_NAME")
 SensorName = os.environ.get("SENSOR_NAME")
 MinPressure = os.environ.get("MIN_PRESSURE")
@@ -23,28 +25,42 @@ timezone = pytz.timezone('America/Montevideo')
 sensor = {
     "sensor": SensorName,
     "sector": SectorName,
-    "min_pressure": MinPressure,
+    "min_pressure": float(MinPressure),
     "coord": Coord 
 }
 payloadSensor = json.dumps(sensor)
 headersSensor = {
-    "Content-Type": "application/json"
-    
+    "Content-Type": "application/json" 
 }
 
-try:
-    # Realizar la solicitud PUT al endpoint en Go
-    response = requests.put(url + "/Sensor/Suscribe", data=payloadSensor, headers=headersSensor)
-    if response.status_code == 200:
-        print("Solicitud exitosa")
-        logging.info("Solicitud exitosa")
-    else:
-        print("Error en la solicitud:"+ response.status_code)
-        logging.error("Error en la solicitud:" + response.status_code)
-except:
-    print("An exception occurred")
+# START AddSensor Request #
 
+MAX_RETRIES = 5
+RETRY_DELAY = 3
 
+retries = 0
+while retries < MAX_RETRIES:
+    try:
+        time.sleep(3)
+        # Realizar la solicitud PUT al endpoint en Go
+        logging.info("Intentando agregar sensor")
+        response = requests.put(url + "/Sensor/Suscribe", data=payloadSensor, headers=headersSensor)
+        if response.status_code == 200:
+            print("Solicitud de agregar sensor exitosa")
+            logging.info("Solicitud de agregar sensor exitosa")
+        else:
+            print("Error en la solicitud:"+ response.status_code)
+            logging.error("Error en la solicitud de agregar sensor:" + response.status_code)
+    except requests.exceptions.RequestException as e:
+        print("Error en la solicitud:", e)
+        logging.error("Error en la solicitud de agregar sensor:" + str(e))
+    
+    retries += 1
+    time.sleep(RETRY_DELAY)
+
+# FINISH AddSensor Request #
+
+logging.info(SensorName + " sending measurements since now.")
 while True:
     if i == error and errorFlag:
         pressure-=50
@@ -62,12 +78,13 @@ while True:
 
     # Establecer los encabezados requeridos
     headers = {
-        "Content-Type": "application/json"
-        
+        "Content-Type": "application/json"   
     }
+
     try:
         # Realizar la solicitud PUT al endpoint en Go
         response = requests.put(url + "/Measurement", data=payload, headers=headers)
+        logging.info("Sending measurement: " + payload)
         if response.status_code == 200:
             print("Solicitud exitosa")
             logging.info("Solicitud exitosa")
