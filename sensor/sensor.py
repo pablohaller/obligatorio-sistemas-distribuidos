@@ -11,14 +11,16 @@ logging.basicConfig(level=logging.DEBUG)  # Set the log level to DEBUG
 
 SectorName = os.environ.get("SECTOR_NAME")
 SensorName = os.environ.get("SENSOR_NAME")
-MinPressure = os.environ.get("MIN_PRESSURE")
+MinPressure = float(os.environ.get("MIN_PRESSURE"))
 Coord = os.environ.get("COORD")
+InitPressure = float(os.environ.get("INIT_PRESSURE"))
 
 url = "http://"+SectorName+":8080"  # Reemplaza con la URL correcta del endpoint en Go.
 error = random.randint(5, 10)
+restore = random.randint(18, 30)
 errorFlag = True
 i=0
-pressure = 112
+pressure = InitPressure
 # Obtener la zona horaria de Uruguay
 timezone = pytz.timezone('America/Montevideo')
 
@@ -35,13 +37,12 @@ headersSensor = {
 
 # START AddSensor Request #
 
-MAX_RETRIES = 5
-RETRY_DELAY = 5
+INIT_BACKOFF = 2
+MAX_BACKOFF = 20
 
 retries = 0
-while retries < MAX_RETRIES:
+while True:
     try:
-        time.sleep(3)
         # Realizar la solicitud PUT al endpoint en Go
         logging.info("Intentando agregar sensor")
         response = requests.put(url + "/Sensor/Suscribe", data=payloadSensor, headers=headersSensor)
@@ -57,15 +58,25 @@ while retries < MAX_RETRIES:
         logging.error("Error en la solicitud de agregar sensor:" + str(e))
     
     retries += 1
-    time.sleep(RETRY_DELAY)
+    time.sleep(random.randint(0, min(MAX_BACKOFF, INIT_BACKOFF * pow(2,retries)))) 
 
 # FINISH AddSensor Request #
 
 logging.info(SensorName + " sending measurements since now.")
 while True:
-    if i == error and errorFlag:
-        pressure-=50
+    pressure += float(random.randint(-9, 9)) * random.uniform(0.01, 0.1) 
+    if (i == error and errorFlag) or pressure <= MinPressure:
         errorFlag = False
+    if not errorFlag:
+        pressure = float(pressure % MinPressure)
+
+    if (i == restore):
+        pressure = InitPressure
+        errorFlag = True
+        i = 0
+        restore = random.randint(18, 30)
+        error = random.randint(5, 10)
+
     current_datetime = datetime.now(timezone).strftime("%Y-%m-%dT%H:%M:%SZ")
     measurement = {
         "datetime": current_datetime,
@@ -73,7 +84,6 @@ while True:
         "sector": SectorName,
         "pressure": pressure
     }
-
     # Convertir el diccionario en una cadena JSON
     payload = json.dumps(measurement)
 
@@ -95,6 +105,6 @@ while True:
     except:
         print("An exception occurred")
 
-    # Esperar 1 segundo antes de realizar la siguiente solicitud
+    # Esperar 10 segundos antes de realizar la siguiente solicitud
     i+=1
     time.sleep(10)

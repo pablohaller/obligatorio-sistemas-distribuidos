@@ -407,7 +407,7 @@ func main() {
 		c.JSON(http.StatusOK, measurements)
 	})
 
-	r.GET("/Measurement", func(c *gin.Context) {
+	r.GET("/Measurements", func(c *gin.Context) {
 		//Para la lectura de la base de datos:
 		rows, err := db.Query("SELECT * FROM measurements")
 		if err != nil {

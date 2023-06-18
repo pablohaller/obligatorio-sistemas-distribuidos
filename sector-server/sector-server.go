@@ -3,15 +3,18 @@
 package main
 
 import (
-    "encoding/json"
-    "fmt"
-    "log"
-	"time"
-    "github.com/streadway/amqp"
-	"net/http"
-	"github.com/gin-gonic/gin"
-	"os"
 	"bytes"
+	"encoding/json"
+	"fmt"
+	"log"
+	"math"
+	"math/rand"
+	"net/http"
+	"os"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/streadway/amqp"
 )
 
 type Measurement struct {
@@ -53,6 +56,9 @@ func main() {
 	clientHealth := &http.Client{}
     req, _ := http.NewRequest("GET", "http://central-server:8080/healthcheck", nil)
 
+	maxBackoff := 20
+	initBackoff := 2
+	var retries int
     for {
         resp, err := clientHealth.Do(req)
         if err != nil {
@@ -61,17 +67,19 @@ func main() {
             fmt.Println("Status code 200 received")
             break
         }
-        time.Sleep(time.Second * 5) // espera 5 segundos antes de volver a intentar
+		retries++
+        time.Sleep(time.Second * time.Duration(rand.Intn(int(math.Min(float64(maxBackoff), float64(initBackoff) * math.Pow(2, float64(retries))))))) // espera 5 segundos antes de volver a intentar
     }
 
 	var conn *amqp.Connection
 	var err error
-
+	retries = 0
 	for conn == nil {
 		conn, err = amqp.Dial("amqp://" + QUEUE_HOST + ":5672/")
 		if err != nil {
 			log.Printf("Failed to connect to RabbitMQ: %v", err)
-			time.Sleep(5 * time.Second) // wait 5 seconds before retrying
+			retries++
+			time.Sleep(time.Second * time.Duration(rand.Intn(int(math.Min(float64(maxBackoff), float64(initBackoff) * math.Pow(2, float64(retries))))))) // espera 5 segundos antes de volver a intentar
 		}
 	}
 	defer conn.Close()

@@ -518,7 +518,7 @@ func main() {
 		c.JSON(http.StatusOK, measurements)
 	})
 
-	r.GET("/Measurement", func(c *gin.Context) {
+	r.GET("/Measurements", func(c *gin.Context) {
 		//Para la lectura de la base de datos:
 		rows, err := db.Query("SELECT * FROM measurements")
 		if err != nil {
@@ -553,7 +553,7 @@ func main() {
 	})
 	
 
-	r.PUT("/Measurements", func(c *gin.Context) {
+	r.PUT("/Measurement", func(c *gin.Context) {
 		var measurement Measurement
 	
 		// Deserializar el body JSON en la struct Medicion
@@ -692,7 +692,7 @@ func consumer(queue string) {
 			// Crear una solicitud HTTP PUT con el cuerpo JSON y el encabezado "Content-Type: application/json"
 			body := bytes.NewBuffer(d.Body)
 
-			req, err := http.NewRequest("PUT", "http://central-server:8080/Measurements", body)
+			req, err := http.NewRequest("PUT", "http://central-server:8080/Measurement", body)
 			req.Header.Set("Content-Type", "application/json")
 
 			// Enviar la solicitud y capturar la respuesta y el posible error
