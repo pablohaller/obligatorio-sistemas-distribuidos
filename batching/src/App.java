@@ -57,7 +57,7 @@ public class App {
                     OutputStream outputStream = connection.getOutputStream();
                     String data = "{\"data\":\"" + alerts.replace("\"","'") + "\", \"filtration\":true}";
 
-                    System.out.println("JSON QUE SE CARGA EN LA REQUEST:\n" + data);
+                    System.out.println("JSON request:\n" + data);
                     outputStream.write(data.getBytes("UTF-8"));
                     outputStream.flush();
                     outputStream.close();          
@@ -193,7 +193,6 @@ public class App {
                 String jsonSensor = jsonNode.toString();
                 // Print the individual JSON string
                 sensor = objectMapper.readValue(jsonSensor, Sensor.class);
-                System.out.println("Adding " + sensor.sector + sensor.sensor + " to Hashmap.");
                 sensorsMap.put(sensor.sector + sensor.sensor, sensor);
             }
         } catch (Exception e) {
@@ -240,10 +239,9 @@ public class App {
 
     public static List<Measurement> filter(List <Measurement> measurements) {
         List<Measurement> filterList = new LinkedList<>();
-        System.out.println("cantidad de measurements: " + measurements.size());
+
         for (Measurement m : measurements) {
             
-            System.out.println(m.sector + m.sensor);
             Sensor sen = sensors.get(m.sector + m.sensor);
             if (sen == null) {
                 sensors = getSensors();
@@ -259,7 +257,7 @@ public class App {
                 reportedSensors.remove(m.sector + m.sensor);
             }
         }
-        System.out.println("Measurements que quedaron despues de filtrar: "+filterList.size());
+        System.out.println("Measurements after filtering: "+filterList.size());
         return filterList;
     }
 
