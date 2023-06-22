@@ -52,3 +52,39 @@ export async function POST(request: Request) {
 
   return NextResponse.json(savedMeasure);
 }
+
+export async function PATCH(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id");
+  let response: any = {};
+  if (id) {
+    const measure = await client.measures.findUnique({
+      where: {
+        id,
+      },
+    });
+    if (measure) {
+      if (measure?.isActive) {
+        const updatedMeasure = await client.measures.update({
+          where: {
+            id,
+          },
+          data: {
+            isActive: false,
+          },
+        });
+        response = updatedMeasure;
+      } else {
+        response = { error: "Measure already inactive" };
+      }
+    } else {
+      response = { error: "Measure not found" };
+    }
+  } else {
+    response = { error: "No Id Provided" };
+  }
+
+  return NextResponse.json(response, {
+    ...(response?.error ? { status: 400 } : {}),
+  });
+}
