@@ -1,18 +1,24 @@
 // @ts-nocheck
 "use client";
 import {
+  FeatureGroup,
   MapContainer,
   Marker,
   Polygon,
   Popup,
   TileLayer,
+  Tooltip,
   useMap,
   useMapEvents,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import MapData from "./MapData";
+import { iconSensor } from "./iconSensor";
+interface Props {
+  sectors: unknown;
+}
 
-const Map = () => {
+const Map = ({ sectors }: Props) => {
   const greenOptions = { color: "green" };
   const green = [
     [-34.91739651002616, -56.16210771871581],
@@ -32,7 +38,29 @@ const Map = () => {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <MapData />
-      <Polygon pathOptions={greenOptions} positions={green} />
+      {Object.keys(sectors).map((key, index) => {
+        const obj = sectors[key];
+        const positions = obj?.coords
+          .split(";")
+          ?.map((coord) => coord.split(",")?.map((unit) => parseFloat(unit)));
+        const pathOptions = { color: "green" };
+        return (
+          <Polygon
+            key={`sector-polygon-${index}`}
+            positions={positions}
+            pathOptions={pathOptions}
+          />
+        );
+      })}
+      <Marker
+        position={[-34.91739651002616, -56.16210771871581]}
+        icon={iconSensor}
+        // icon={iconSensor}
+      >
+        <Popup>Popup for Marker</Popup>
+        <Tooltip>Tooltip for Marker</Tooltip>
+      </Marker>
+      {/* <Polygon pathOptions={greenOptions} positions={green} /> */}
       {/* <Marker position={[51.505, -0.09]}>
         <Popup>Test</Popup>
       </Marker> */}
