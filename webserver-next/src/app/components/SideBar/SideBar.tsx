@@ -1,5 +1,6 @@
 "use client";
 import {
+  IconEngine,
   IconLogout,
   IconMap,
   IconMenu2,
@@ -90,6 +91,17 @@ const SideBar = ({ session }: Props) => {
           <Link
             className={twMerge(
               "p-4 flex items-center hover:text-sky-400",
+              isMapActive &&
+                "text-sky-500  bg-sky-100 rounded-xl hover:text-sky-500"
+            )}
+            href="/dashboard/map"
+          >
+            <IconMap className="mr-2" />
+            <span>Mapa</span>
+          </Link>
+          <Link
+            className={twMerge(
+              "p-4 flex items-center hover:text-sky-400",
               isReportActive &&
                 "text-sky-500 bg-sky-100 rounded-xl  hover:text-sky-500"
             )}
@@ -101,13 +113,13 @@ const SideBar = ({ session }: Props) => {
           <Link
             className={twMerge(
               "p-4 flex items-center hover:text-sky-400",
-              isMapActive &&
-                "text-sky-500  bg-sky-100 rounded-xl hover:text-sky-500"
+              isReportActive &&
+                "text-sky-500 bg-sky-100 rounded-xl  hover:text-sky-500"
             )}
-            href="/dashboard/map"
+            href="/dashboard/measurements"
           >
-            <IconMap className="mr-2" />
-            <span>Mapa</span>
+            <IconEngine className="mr-2" />
+            <span>Mediciones</span>
           </Link>
           <div
             className="p-4 flex items-center cursor-pointer hover:text-sky-400"
