@@ -54,7 +54,10 @@ const Map = ({ sectors }: Props) => {
       })}
       <Marker
         position={[-34.91739651002616, -56.16210771871581]}
-        icon={iconSensor}
+        icon={L.icon({
+          iconUrl: "/img/iconSensor.png",
+          iconSize: [44, 44],
+        })}
         // icon={iconSensor}
       >
         <Popup>Popup for Marker</Popup>

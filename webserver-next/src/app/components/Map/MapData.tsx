@@ -10,6 +10,9 @@ const MapData = () => {
     click: (location) => {
       console.log(location.latlng);
     },
+    load: () => {
+      console.log("loaded");
+    },
     // click: () => {
     //   map.locate();
     // },
