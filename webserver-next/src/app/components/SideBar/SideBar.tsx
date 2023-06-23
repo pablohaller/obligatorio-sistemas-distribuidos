@@ -118,7 +118,7 @@ const SideBar = ({ session }: Props) => {
             )}
             href="/dashboard/measurements"
           >
-            <IconEngine className="mr-2" />
+            <IconEngine className="mr-2 flex-shrink-0" />
             <span>Mediciones</span>
           </Link>
           <div

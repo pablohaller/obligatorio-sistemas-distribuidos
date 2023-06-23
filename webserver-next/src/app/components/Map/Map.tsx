@@ -45,11 +45,16 @@ const Map = ({ sectors }: Props) => {
           ?.map((coord) => coord.split(",")?.map((unit) => parseFloat(unit)));
         const pathOptions = { color: "green" };
         return (
-          <Polygon
-            key={`sector-polygon-${index}`}
-            positions={positions}
-            pathOptions={pathOptions}
-          />
+          <>
+            <Polygon
+              key={`sector-polygon-${index}`}
+              positions={positions}
+              pathOptions={pathOptions}
+            >
+              <Popup>Popup for Marker</Popup>
+              <Tooltip>Tooltip for Marker</Tooltip>
+            </Polygon>
+          </>
         );
       })}
       <Marker
