@@ -6,20 +6,44 @@ import {
   Polygon,
   Popup,
   TileLayer,
-  useMap,
-  useMapEvents,
+  Tooltip,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import MapData from "./MapData";
+import { useMemo } from "react";
+interface Props {
+  sectors: unknown;
+}
 
-const Map = () => {
-  const greenOptions = { color: "green" };
-  const green = [
-    [-34.91739651002616, -56.16210771871581],
-    [-34.91520592550176, -56.15995194170265],
-    [-34.915812960803784, -56.15930842617635],
-    [-34.91799473178162, -56.161485653707054],
-  ];
+const Map = ({ sectors }: Props) => {
+  const mapData = useMemo(() => {
+    let mapSectors = [];
+    let mapSensors = [];
+    Object.keys(sectors).forEach((key) => {
+      const sector = sectors[key];
+      sector?.sensors?.forEach((sensor) => {
+        mapSensors.push({
+          sensor: key,
+          coords: sensor?.coord?.split(",")?.map((unit) => parseFloat(unit)),
+        });
+      });
+      mapSectors.push({
+        sector: key,
+        sensors: sector?.sensors,
+        positions: sector?.coords
+          .split(";")
+          ?.map((coord) => coord.split(",")?.map((unit) => parseFloat(unit))),
+        pathOptions: { color: "green" },
+      });
+    });
+
+    return {
+      mapSectors,
+      mapSensors,
+    };
+  }, [sectors]);
+
+  const { mapSectors, mapSensors } = mapData;
 
   return (
     <MapContainer
@@ -32,10 +56,33 @@ const Map = () => {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <MapData />
-      <Polygon pathOptions={greenOptions} positions={green} />
-      {/* <Marker position={[51.505, -0.09]}>
-        <Popup>Test</Popup>
-      </Marker> */}
+      {mapSectors?.map(({ sector, positions, sensors, pathOptions }) => (
+        <Polygon
+          key={`sector-polygon-${sector}`}
+          positions={positions}
+          pathOptions={pathOptions}
+        >
+          <Tooltip>{sector}</Tooltip>
+          <Popup>
+            {sensors?.map(({ sensor }) => (
+              <div key={`popup-${sector}-sensor-${sensor}`}>{sensor}</div>
+            ))}
+          </Popup>
+        </Polygon>
+      ))}
+      {mapSensors?.map(({ sensor, coords }) => (
+        <Marker
+          key={`sensor-marker-${sensor}`}
+          position={coords}
+          icon={L.icon({
+            iconUrl: "/img/iconSensor.png",
+            iconSize: [44, 44],
+          })}
+        >
+          <Popup>{sensor}</Popup>
+          <Tooltip>{sensor}</Tooltip>
+        </Marker>
+      ))}
     </MapContainer>
   );
 };

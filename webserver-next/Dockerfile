@@ -12,11 +12,11 @@ COPY prisma ./prisma/
 
 # install dependencies
 RUN npm install
-
+RUN npm install bcrypt
 RUN npm install @prisma/client
 
 COPY . .
 RUN npx prisma generate --schema ./prisma/schema.prisma
 # start app
 EXPOSE 3000 5555
-CMD [ "npm", "run", "dev:prisma" ]
+CMD [ "npm", "run", "dev:prisma" ] 
