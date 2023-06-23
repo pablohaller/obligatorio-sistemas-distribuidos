@@ -14,7 +14,7 @@ import {
 import SectorListItem from "./SectorListItem";
 
 interface Props {
-  sectors: string[];
+  sectors: any[];
 }
 
 const mockedData = {
@@ -126,13 +126,19 @@ const mockedData = {
 
 const SectorList = ({ sectors }: Props) => {
   const [chartData, setChartData] = useState([]);
-  const [selectedSector, setSelectedSector] = useState(sectors?.[0] || null);
+  const [selectedSector, setSelectedSector] = useState(
+    sectors?.[0]?.sector || null
+  );
   const chartsDiv = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const getData = async () => {
-      // const response = await fetch('')
-      // setChartData(response);
+      // const response = await fetch(
+      //   `${process.env.NEXT_PUBLIC_NGINX_API_URI}/LastSectorMeasurements/${selectedSector}/1` ||
+      //     ""
+      // );
+      // const data = await response.json();
+      // console.log("data", data);
       const dataArray = Object.keys(mockedData)?.reduce((array: any, key) => {
         // return [...array, { sensor: key }];
         const data = mockedData[key as keyof typeof mockedData];
@@ -160,7 +166,7 @@ const SectorList = ({ sectors }: Props) => {
     <div className="h-full">
       <div className="pl-2 font-semibold py-2">Sectores:</div>
       <div className="p-2 grid grid-cols-2 gap-2 h-1/4 overflow-auto overflow-y-scroll">
-        {sectors?.map((sector) => (
+        {sectors?.map(({ sector }) => (
           <SectorListItem
             key={`sector-list-${sector}`}
             sector={sector}

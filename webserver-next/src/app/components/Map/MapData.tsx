@@ -11,7 +11,7 @@ const MapData = () => {
       console.log(location.latlng);
     },
     load: () => {
-      console.log("loaded");
+      console.log("Map loaded");
     },
     // click: () => {
     //   map.locate();

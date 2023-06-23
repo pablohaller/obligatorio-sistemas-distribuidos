@@ -7,20 +7,17 @@ const SectorList = dynamic(
   { ssr: false }
 );
 
+async function getData() {
+  const res = await fetch(`${process.env.NEXT_NGINX_API_URI}/Sectors` || "");
+  if (!res.ok) {
+    throw new Error("Failed to fetch data");
+  }
+
+  return res.json();
+}
+
 const Page = async () => {
-  // const sectors = await fetch('GET SECTORS');
-  const sectors = [
-    "sector-server-a-1",
-    "sector-server-a-2",
-    "sector-server-a-3",
-    "sector-server-a-4",
-    "sector-server-a-5",
-    "sector-server-a-6",
-    "sector-server-a-7",
-    "sector-server-a-8",
-    "sector-server-a-9",
-    "sector-server-a-10",
-  ];
+  const sectors = await getData();
 
   return (
     <div className="h-[75%]">
