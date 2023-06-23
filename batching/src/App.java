@@ -24,23 +24,21 @@ import com.sun.net.httpserver.HttpHandler;
 
 
 public class App {  
-    private static List<String> reportedSensors = new ArrayList<>();
+    // Hashmap 
+    private static HashMap<String, String> reportedSensors = new HashMap<>();
     private static int pollingRate;
     private static HashMap<String,Sensor> sensors = new HashMap<>();
-
+    private static String webServer = System.getenv("WEB-SERVER-HOST");
     public static void main(String[] args) throws Exception {
         pollingRate =  Integer.valueOf(System.getenv("POLLING-RATE"));
-        String webServer = System.getenv("WEB-SERVER-HOST");
-      
         while (true) {
-
-            String alerts = getAlerts();
-            if(alerts != ""){
+            List<Measurement> alerts = getAlerts();
+            if(!alerts.isEmpty()){
                 int initBackoff = 2;
                 int maxBackoff = 20;
                 int retries = 0;
                 Random r = new Random();
-                while (true) {
+                while (!alerts.isEmpty()) {
                     URL url = new URL("http://" + webServer + ":3000/api/measures");
                     System.out.println(url);
 
@@ -55,7 +53,8 @@ public class App {
 
                     connection.setDoOutput(true);
                     OutputStream outputStream = connection.getOutputStream();
-                    String data = "{\"data\":\"" + alerts.replace("\"","'") + "\", \"filtration\":true}";
+                    String data = "{\"data\":\"" + MeasurementToJson(alerts.get(0)).replace("\"","'") + "\", \"filtration\":true}"; // Intentar agregar elemento
+                    // 
 
                     System.out.println("JSON request:\n" + data);
                     outputStream.write(data.getBytes("UTF-8"));
@@ -66,9 +65,37 @@ public class App {
                     int responseCode = connection.getResponseCode();
 
                     if (responseCode == 200) {
-                        break;
+                        // Read the response body
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                        String line;
+                        StringBuilder response = new StringBuilder();
+                        while ((line = reader.readLine()) != null) {
+                            response.append(line);
+                        }
+                        reader.close();
+
+                        String report = response.toString();
+
+                        // Crear una instancia del ObjectMapper
+                        ObjectMapper objectMapper = new ObjectMapper();
+
+                        // Analizar el JSON y obtener el nodo raíz
+                        JsonNode rootNode = objectMapper.readTree(report);
+
+                        // Obtener el valor del campo "id" como cadena (String)
+                        String id = rootNode.get("id").asText();
+
+                        // Imprimir el valor del campo "id"
+                        System.out.println("ID: " + id);
+
+                        // Asociar el codigo del reporte con el sensor para despues en el filter poder darlo de baja si es necesario
+                        reportedSensors.put(alerts.get(0).sector + alerts.get(0).sensor, id);
+
+                        // Sacar el elemento que acabas de guardar.
+                        alerts.remove(0); 
+                        retries = 0;
                     }
-                   
+                    
                     System.out.println("Response Code: " + responseCode);
                     retries++;
                     double random = Math.min(maxBackoff, initBackoff * Math.pow(2, retries));
@@ -80,7 +107,7 @@ public class App {
         }
     }
 
-    public static String getAlerts() {
+    public static List<Measurement> getAlerts() {
         String json = "";
         try {
             // Get the value of the environment variable
@@ -125,9 +152,9 @@ public class App {
             e.printStackTrace();
         }
         if(json != ""){
-            return MeasurementsToJson(filter(JsonToMeasurements(json)));
+            return filter(JsonToMeasurements(json));
         }
-        return "";
+        return null;
     }
 
     public static HashMap<String, Sensor> getSensors() {
@@ -237,6 +264,20 @@ public class App {
         return "";
     }
 
+    public static String MeasurementToJson(Measurement measurement){
+        // Crear una instancia de ObjectMapper
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            // Convertir el objeto a JSON
+            String json = objectMapper.writeValueAsString(measurement);
+            return json;
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return "";
+    }   
+
+
     public static List<Measurement> filter(List <Measurement> measurements) {
         List<Measurement> filterList = new LinkedList<>();
 
@@ -248,17 +289,55 @@ public class App {
                 System.out.println("Hashmap size after getSensors(): " + sensors.size());
                 sen = sensors.get(m.sector + m.sensor);
             }
-            if (m.getPressure() < sen.getMinPressure() && !reportedSensors.contains(m.sector + m.sensor)) { // Si la presion es menor al umbral y el sensor no había sdo procesado.
+            if (m.getPressure() < sen.getMinPressure() && !reportedSensors.containsKey(m.sector + m.sensor)) { // Si la presion es menor al umbral y el sensor no había sdo procesado.
                 filterList.add(m);
-                reportedSensors.add(m.sector + m.sensor);
-            }else if(m.getPressure() > sen.getMinPressure() && reportedSensors.contains(m.sector + m.sensor)  ) {
+                reportedSensors.put(m.sector + m.sensor,"");
+            }else if(m.getPressure() > sen.getMinPressure() && reportedSensors.containsKey(m.sector + m.sensor)  ) {
                 //PEGARLE AL ENDPOINT QUE HACE EL WEBSERVER
-                
+                sendRemoveReport(reportedSensors.get(m.sector + m.sensor));
                 reportedSensors.remove(m.sector + m.sensor);
             }
         }
         System.out.println("Measurements after filtering: "+filterList.size());
         return filterList;
+    }
+
+
+    public static void sendRemoveReport(String id){ 
+        int initBackoff = 2;
+        int maxBackoff = 20;
+        int retries = 0;
+        Random r = new Random();
+        while (true) {
+            try {
+                URL url = new URL("http://" + webServer + ":3000/api/measures/?id=" + id);
+                System.out.println(url);
+
+                // Open a connection to the URL
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+                // Set the request method to POST
+                connection.setRequestMethod("POST");
+                
+                // Set the X-HTTP-Method-Override header to PATCH
+                connection.setRequestProperty("X-HTTP-Method-Override", "PATCH");
+
+                // Get the response code
+                int responseCode = connection.getResponseCode();
+
+                if (responseCode == 200) {
+                    break;
+                }
+                
+                System.out.println("Response Code: " + responseCode);
+                retries++;
+                double random = Math.min(maxBackoff, initBackoff * Math.pow(2, retries));
+                Thread.sleep(1000 * r.nextInt((int)random + 1));
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+            
+        }
     }
 
     public static class Sensor {
