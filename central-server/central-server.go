@@ -250,7 +250,7 @@ func main() {
 		c.JSON(http.StatusOK, sensors)
 	})
 
-	r.GET("/MapReport", func(c *gin.Context){
+	r.POST("/MapReport", func(c *gin.Context){
 
 		var measurement Measurement
 		
@@ -588,7 +588,7 @@ func main() {
 		return
 	})
 
-	r.GET("/Alert", func(c *gin.Context) {
+	r.POST("/Alert", func(c *gin.Context) {
 		var measurement Measurement
 	
 		// Deserializar el body JSON en la struct Medicion
