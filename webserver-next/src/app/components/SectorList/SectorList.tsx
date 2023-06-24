@@ -40,7 +40,6 @@ const SectorList = ({ sectors }: Props) => {
                 (obj: any) => ({
                   ...obj,
                   datetime: DateTime.fromISO(obj?.datetime)
-                    .plus({ hours: -3 })
                     .setZone("America/Montevideo")
                     .toFormat("hh:mm:ss a"),
                 })

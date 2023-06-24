@@ -56,7 +56,6 @@ const MeasuresList = ({ measures }: Props) => {
                       </div>
                       <div className="break-normal text-sm">
                         {DateTime.fromISO(measure?.datetime)
-                          .plus({ hours: -3 })
                           .setZone("America/Montevideo")
                           .toFormat("dd/MM/yyyy - hh:mm a")}
                       </div>
