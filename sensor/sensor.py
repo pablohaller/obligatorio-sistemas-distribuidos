@@ -16,10 +16,10 @@ Coord = os.environ.get("COORD")
 InitPressure = float(os.environ.get("INIT_PRESSURE"))
 
 url = "http://"+SectorName+":8080"  # Reemplaza con la URL correcta del endpoint en Go.
-error = random.randint(5, 10)
+error = random.randint(5, 7)
 restore = random.randint(18, 30)
 errorFlag = True
-i=0
+i=1
 pressure = InitPressure
 # Obtener la zona horaria de Uruguay
 timezone = pytz.timezone('America/Montevideo')
@@ -73,7 +73,7 @@ while True:
     if (i == restore):
         pressure = InitPressure
         errorFlag = True
-        i = 0
+        i = 1
         restore = random.randint(18, 30)
         error = random.randint(5, 10)
 
