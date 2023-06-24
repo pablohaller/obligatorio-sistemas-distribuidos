@@ -52,7 +52,7 @@ services:
     ports:
       - '5432'
     volumes:
-      - './central-db/data:/bitnami/postgresql'
+    #  - './central-db/data:/bitnami/postgresql'
       - './central-db/init.sql:/docker-entrypoint-initdb.d/init.sql'
     environment:
       - POSTGRESQL_REPLICATION_MODE=master
@@ -141,6 +141,8 @@ services:
     build: ./webserver-next
     environment:
       - NAME=WEBSERVER-NEXT
+    volumes:
+     # - './webserver-next/prisma/dev.db:./prisma/dev.db'
     ports:
       - "3000:3000"
       - "5555:5555"
