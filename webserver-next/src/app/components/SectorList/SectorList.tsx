@@ -133,31 +133,30 @@ const SectorList = ({ sectors }: Props) => {
 
   useEffect(() => {
     const getData = async () => {
-      // const response = await fetch(
-      //   `${process.env.NEXT_PUBLIC_NGINX_API_URI}/LastSectorMeasurements/${selectedSector}/1` ||
-      //     ""
-      // );
-      // const data = await response.json();
-      // console.log("data", data);
-      const dataArray = Object.keys(mockedData)?.reduce((array: any, key) => {
-        // return [...array, { sensor: key }];
-        const data = mockedData[key as keyof typeof mockedData];
-        return [
-          ...array,
-          // { sensor: key, data: mockedData[key as keyof typeof mockedData] },
-          {
-            sensor: key,
-            data: data?.map((obj) => ({
-              ...obj,
-              pressure: obj?.pressure * (Math.floor(Math.random() * 10) + 1),
-              datetime: DateTime.fromISO(obj?.datetime)
-                .setZone("America/Montevideo")
-                .toFormat("dd/MM/yyyy - hh:mm:ss a"),
-            })),
-          },
-        ];
-      }, []);
-      setChartData(dataArray);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_NGINX_API_URI}/LastSectorMeasurements/${selectedSector}/1` ||
+          ""
+      );
+      const measurments = await response.json();
+      setChartData(
+        Object.keys(measurments)?.reduce(
+          (array: any, key) => [
+            ...array,
+            {
+              sensor: key,
+              data: measurments[key as keyof typeof mockedData]?.map(
+                (obj: any) => ({
+                  ...obj,
+                  datetime: DateTime.fromISO(obj?.datetime)
+                    .setZone("America/Montevideo")
+                    .toFormat("dd/MM/yyyy - hh:mm:ss a"),
+                })
+              ),
+            },
+          ],
+          []
+        )
+      );
     };
     getData();
   }, [selectedSector]);
