@@ -53,7 +53,7 @@ export async function POST(request: Request) {
   return NextResponse.json(savedMeasure);
 }
 
-export async function PATCH(request: Request) {
+export async function DELETE(request: Request) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
   let response: any = {};

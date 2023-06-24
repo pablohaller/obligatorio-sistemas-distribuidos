@@ -11,9 +11,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.*;
 import com.sun.net.httpserver.HttpServer;
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 
@@ -289,13 +293,17 @@ public class App {
                 System.out.println("Hashmap size after getSensors(): " + sensors.size());
                 sen = sensors.get(m.sector + m.sensor);
             }
-            if (m.getPressure() < sen.getMinPressure() && !reportedSensors.containsKey(m.sector + m.sensor)) { // Si la presion es menor al umbral y el sensor no había sdo procesado.
+            if (m.getPressure() < sen.getMinPressure() && !reportedSensors.containsKey(m.sector + m.sensor)) { // Si la presion es menor al umbral y el sensor no había sIdo procesado.
                 filterList.add(m);
                 reportedSensors.put(m.sector + m.sensor,"");
+                System.out.println("Report added: "+m.sector + m.sensor);
             }else if(m.getPressure() > sen.getMinPressure() && reportedSensors.containsKey(m.sector + m.sensor)  ) {
                 //PEGARLE AL ENDPOINT QUE HACE EL WEBSERVER
+                System.out.println("else if joined, sending id: " + reportedSensors.get(m.sector + m.sensor));
                 sendRemoveReport(reportedSensors.get(m.sector + m.sensor));
                 reportedSensors.remove(m.sector + m.sensor);
+                System.out.println("La key sigue estando? "+ reportedSensors.containsKey(m.sector + m.sensor));
+            
             }
         }
         System.out.println("Measurements after filtering: "+filterList.size());
@@ -308,28 +316,30 @@ public class App {
         int maxBackoff = 20;
         int retries = 0;
         Random r = new Random();
+        System.out.println("New Call id: " + id);
         while (true) {
             try {
-                URL url = new URL("http://" + webServer + ":3000/api/measures/?id=" + id);
+                //URL url = new URL("http://" + webServer + ":3000/api/measures/?id=" + id);
+                URL url = new URL("http://" + webServer + ":3000/api/measures?id=" + id);
+
                 System.out.println(url);
 
                 // Open a connection to the URL
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
                 // Set the request method to POST
-                connection.setRequestMethod("POST");
+                connection.setRequestMethod("DELETE");
+
+                // Optional: Set request headers
+                connection.setRequestProperty("Content-Type", "application/json");
                 
-                // Set the X-HTTP-Method-Override header to PATCH
-                connection.setRequestProperty("X-HTTP-Method-Override", "PATCH");
-
                 // Get the response code
-                int responseCode = connection.getResponseCode();
-
+                int responseCode = connection.getResponseCode(); 
+                System.out.println("Response Code: " + responseCode);
                 if (responseCode == 200) {
                     break;
                 }
                 
-                System.out.println("Response Code: " + responseCode);
                 retries++;
                 double random = Math.min(maxBackoff, initBackoff * Math.pow(2, retries));
                 Thread.sleep(1000 * r.nextInt((int)random + 1));
