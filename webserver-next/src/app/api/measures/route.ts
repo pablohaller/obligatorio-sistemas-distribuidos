@@ -1,3 +1,4 @@
+import { DASHBOARD_REPORTS_PATH } from "@/app/constants/routes";
 import client from "@/app/prisma/client";
 import { Users } from "@prisma/client";
 import { NextResponse } from "next/server";
@@ -38,8 +39,8 @@ export async function POST(request: Request) {
       const mailOptions = {
         from: process.env.GMAIL_ACCOUNT,
         to: mailingList,
-        subject: "Lorem Ipsum",
-        text: "Lorem Ipsum",
+        subject: "Filtración encontrada",
+        html: `<a href="${process.env.NEXT_API_URL}${DASHBOARD_REPORTS_PATH}/${savedMeasure?.id}">Click para ver</a>`,
       };
 
       transporter.sendMail(mailOptions, (error, info) => {
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
         }
       });
     } catch (error) {
-      console.error(error);
+      console.error("Email not sent", error);
     }
   }
 

@@ -4,7 +4,11 @@ import { IconReport } from "@tabler/icons-react";
 import React from "react";
 
 const Page = async () => {
-  const measures = await client.measures.findMany();
+  const measures = await client.measures.findMany({
+    where: {
+      isActive: true
+    }
+  });
 
   return (
     <>

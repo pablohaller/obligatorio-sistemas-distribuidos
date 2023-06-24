@@ -21,6 +21,10 @@ const SectorList = ({ sectors }: Props) => {
 
   useEffect(() => {
     const getData = async () => {
+      console.log(
+        "fetch",
+        `${process.env.NEXT_PUBLIC_NGINX_API_URI}/LastSectorMeasurements/${selectedSector}/${timespan}`
+      );
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_NGINX_API_URI}/LastSectorMeasurements/${selectedSector}/${timespan}` ||
           ""

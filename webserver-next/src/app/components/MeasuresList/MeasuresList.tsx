@@ -63,19 +63,19 @@ const MeasuresList = ({ measures }: Props) => {
                     <div>
                       <div className="font-rubik">Presi&oacute;n</div>
                       <div className="break-normal text-sm">
-                        {measure?.Presion}
+                        {measure?.pressure}
                       </div>
                     </div>
                     <div>
                       <div className="font-rubik">Sector</div>
                       <div className="break-normal text-sm">
-                        {measure?.Sector}
+                        {measure?.sector}
                       </div>
                     </div>
                     <div>
                       <div className="font-rubik">Sensor</div>
                       <div className="break-normal text-sm">
-                        {measure?.Sensor}
+                        {measure?.sensor}
                       </div>
                     </div>
                     <div className="flex justify-end w-full col-span-2 md:col-span-4">
