@@ -50,6 +50,7 @@ const Page = async ({ params }: Props) => {
     (measurement: MeasureChartData) => ({
       ...measurement,
       datetime: DateTime.fromISO(measurement?.datetime)
+        .plus({ hours: -3 })
         .setZone("America/Montevideo")
         .toFormat("hh:mm:ss a"),
     })
