@@ -281,32 +281,48 @@ public class App {
         return "";
     }   
 
+    public static boolean removeFromFilterList(String sector, String sensor, List<Measurement> filterList) {
+        Measurement mToRemove = null;
+        for (Measurement m : filterList) {
+            if ((m.getSector() + m.getSensor()).compareTo(sector+sensor) == 0) {
+                mToRemove = m;
+                break;
+            }
+        }
+        if(mToRemove != null){
+            return filterList.remove(mToRemove);
+        }
+        return false;
+    }
 
     public static List<Measurement> filter(List <Measurement> measurements) {
         List<Measurement> filterList = new LinkedList<>();
 
         for (Measurement m : measurements) {
-            
+        
             Sensor sen = sensors.get(m.sector + m.sensor);
             if (sen == null) {
                 sensors = getSensors();
                 System.out.println("Hashmap size after getSensors(): " + sensors.size());
                 sen = sensors.get(m.sector + m.sensor);
             }
+            
             if (m.getPressure() < sen.getMinPressure() && !reportedSensors.containsKey(m.sector + m.sensor)) { // Si la presion es menor al umbral y el sensor no había sIdo procesado.
                 filterList.add(m);
                 reportedSensors.put(m.sector + m.sensor,"");
                 System.out.println("Report added: "+m.sector + m.sensor);
-            }else if(m.getPressure() > sen.getMinPressure() && reportedSensors.containsKey(m.sector + m.sensor)  ) {
-                //PEGARLE AL ENDPOINT QUE HACE EL WEBSERVER
-                System.out.println("else if joined, sending id: " + reportedSensors.get(m.sector + m.sensor));
-                sendRemoveReport(reportedSensors.get(m.sector + m.sensor));
+            }else if(m.getPressure() >= sen.getMinPressure() && reportedSensors.containsKey(m.sector + m.sensor)) {
+                
+                if(reportedSensors.get(m.sector + m.sensor).compareTo("")!=0){
+                    System.out.println("Sending id: " + reportedSensors.get(m.sector + m.sensor));
+                    sendRemoveReport(reportedSensors.get(m.sector + m.sensor));
+                } else {
+                    removeFromFilterList(m.sector, m.sensor, filterList);
+                }
                 reportedSensors.remove(m.sector + m.sensor);
-                System.out.println("La key sigue estando? "+ reportedSensors.containsKey(m.sector + m.sensor));
-            
             }
         }
-        System.out.println("Measurements after filtering: "+filterList.size());
+        System.out.println("Measurements after filtering: " + filterList.size());
         return filterList;
     }
 
