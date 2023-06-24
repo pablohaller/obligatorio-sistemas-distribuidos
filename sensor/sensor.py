@@ -16,7 +16,7 @@ Coord = os.environ.get("COORD")
 InitPressure = float(os.environ.get("INIT_PRESSURE"))
 
 url = "http://"+SectorName+":8080"  # Reemplaza con la URL correcta del endpoint en Go.
-error = random.randint(5, 7)
+error = random.randint(5, 10)
 restore = random.randint(18, 30)
 errorFlag = True
 i=1

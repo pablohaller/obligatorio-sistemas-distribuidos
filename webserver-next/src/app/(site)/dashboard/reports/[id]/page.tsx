@@ -51,7 +51,7 @@ const Page = async ({ params }: Props) => {
       ...measurement,
       datetime: DateTime.fromISO(measurement?.datetime)
         .setZone("America/Montevideo")
-        .plus({ hours: -3 })
+        .plus({ hours: 3 })
         .toFormat("hh:mm:ss a"),
     })
   );
