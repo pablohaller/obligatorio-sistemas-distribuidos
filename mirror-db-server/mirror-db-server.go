@@ -443,15 +443,18 @@ func main() {
 		c.JSON(http.StatusOK, measurements)
 	})
 
+
 	r.POST("/Alert", func(c *gin.Context) {
 		var measurement Measurement
-	
+		
 		// Deserializar el body JSON en la struct Medicion
 		if err := c.ShouldBindJSON(&measurement); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		
+		measurement.Datetime  = measurement.Datetime.Add(-30 * time.Second)
+
 		stmt, err := db.Prepare("SELECT * FROM measurements WHERE datetime >= $1 AND sensor = $2 AND sector = $3")
 		if err != nil {
 			log.Printf("Error al preparar la sentencia SQL: %v", err)
