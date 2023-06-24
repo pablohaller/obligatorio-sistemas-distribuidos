@@ -13,35 +13,54 @@ import MapData from "./MapData";
 import { useMemo } from "react";
 interface Props {
   sectors: unknown;
+  mapReport?: boolean;
 }
 
-const Map = ({ sectors }: Props) => {
+const Map = ({ sectors, mapReport }: Props) => {
   const mapData = useMemo(() => {
     let mapSectors = [];
     let mapSensors = [];
-    Object.keys(sectors).forEach((key) => {
-      const sector = sectors[key];
-      sector?.sensors?.forEach((sensor) => {
-        mapSensors.push({
-          sensor: key,
-          coords: sensor?.coord?.split(",")?.map((unit) => parseFloat(unit)),
-        });
-      });
+    if (mapReport) {
       mapSectors.push({
-        sector: key,
-        sensors: sector?.sensors,
-        positions: sector?.coords
+        sector: sectors?.sector,
+        sensors: sectors?.sensors,
+        positions: sectors?.coords
           .split(";")
           ?.map((coord) => coord.split(",")?.map((unit) => parseFloat(unit))),
-        pathOptions: { color: "green" },
+        pathOptions: { color: "red" },
       });
-    });
+      sectors?.sensors?.forEach(({ sensor, coord }) => {
+        console.log("sensor", sensor);
+        mapSensors.push({
+          sensor,
+          coords: coord?.split(",")?.map((unit) => parseFloat(unit)),
+        });
+      });
+    } else {
+      Object.keys(sectors).forEach((key) => {
+        const sector = sectors[key];
+        sector?.sensors?.forEach((sensor) => {
+          mapSensors.push({
+            sensor: key,
+            coords: sensor?.coord?.split(",")?.map((unit) => parseFloat(unit)),
+          });
+        });
+        mapSectors.push({
+          sector: key,
+          sensors: sector?.sensors,
+          positions: sector?.coords
+            .split(";")
+            ?.map((coord) => coord.split(",")?.map((unit) => parseFloat(unit))),
+          pathOptions: { color: "green" },
+        });
+      });
+    }
 
     return {
       mapSectors,
       mapSensors,
     };
-  }, [sectors]);
+  }, [sectors, mapReport]);
 
   const { mapSectors, mapSensors } = mapData;
 

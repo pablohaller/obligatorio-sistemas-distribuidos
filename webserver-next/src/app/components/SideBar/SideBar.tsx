@@ -15,6 +15,7 @@ import Modal from "../modal/modal";
 import Link from "next/link";
 import { twMerge } from "tailwind-merge";
 import { usePathname } from "next/navigation";
+import LoadingSpinner from "../LoadingSpinner/LoadingSpinner";
 
 interface Props {
   session: Session | null;
@@ -23,15 +24,18 @@ interface Props {
 interface ActivePathname {
   isReportActive: boolean;
   isMapActive: boolean;
+  isMeasurementsActive: boolean;
 }
 
 const getActivePathName = (pathname: string | undefined): ActivePathname => ({
   isReportActive: pathname?.includes("/dashboard/reports") || false,
   isMapActive: pathname?.includes("/dashboard/map") || false,
+  isMeasurementsActive: pathname?.includes("/dashboard/measurements") || false,
 });
 
 const SideBar = ({ session }: Props) => {
   const clientPathName = usePathname();
+  const [loadingSignOut, setLoadingSignOut] = useState(false);
   const [activePathname, setActivePathname] = useState<ActivePathname>(
     getActivePathName(clientPathName)
   );
@@ -46,12 +50,16 @@ const SideBar = ({ session }: Props) => {
     () => setShowMobileMenu(!showMobileMenu),
     [showMobileMenu]
   );
+  const handleSignOut = useCallback(() => {
+    signOut();
+    setLoadingSignOut(true);
+  }, []);
 
   useEffect(() => {
     setActivePathname(getActivePathName(clientPathName));
   }, [clientPathName]);
 
-  const { isReportActive, isMapActive } = activePathname;
+  const { isReportActive, isMapActive, isMeasurementsActive } = activePathname;
 
   return (
     <>
@@ -113,7 +121,7 @@ const SideBar = ({ session }: Props) => {
           <Link
             className={twMerge(
               "p-4 flex items-center hover:text-sky-400",
-              isReportActive &&
+              isMeasurementsActive &&
                 "text-sky-500 bg-sky-100 rounded-xl  hover:text-sky-500"
             )}
             href="/dashboard/measurements"
@@ -130,14 +138,21 @@ const SideBar = ({ session }: Props) => {
           </div>
         </div>
       </div>
-      {showLogOut && (
+      {loadingSignOut && (
+        <Modal hideConfirmButton>
+          <div className="h-32 w-36">
+            {loadingSignOut && <LoadingSpinner />}
+          </div>
+        </Modal>
+      )}
+      {showLogOut && !loadingSignOut && (
         <Modal
           title="Cerrar sesión"
-          onConfirm={signOut}
+          onConfirm={handleSignOut}
           showCancelButton
           onCancel={handleShowLogOut}
         >
-          ¿Seguro desea cerrar sesión?
+          <span>¿Seguro desea cerrar sesión?</span>
         </Modal>
       )}
     </>

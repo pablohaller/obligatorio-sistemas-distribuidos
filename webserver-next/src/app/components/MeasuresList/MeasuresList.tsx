@@ -7,6 +7,7 @@ import {
   IconEye,
 } from "@tabler/icons-react";
 import { DateTime } from "luxon";
+import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
@@ -44,7 +45,7 @@ const MeasuresList = ({ measures }: Props) => {
                 <span>{id}</span>
               </div>
               <div>
-                {parsedData?.map((measure: any, index: number) => (
+                {[parsedData]?.map((measure: any, index: number) => (
                   <div
                     key={`${id}/${index}`}
                     className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2"
@@ -54,7 +55,7 @@ const MeasuresList = ({ measures }: Props) => {
                         Fecha y hora
                       </div>
                       <div className="break-normal text-sm">
-                        {DateTime.fromISO(measure?.Datetime)
+                        {DateTime.fromISO(measure?.datetime)
                           .setZone("America/Montevideo")
                           .toFormat("dd/MM/yyyy - hh:mm a")}
                       </div>
@@ -78,10 +79,13 @@ const MeasuresList = ({ measures }: Props) => {
                       </div>
                     </div>
                     <div className="flex justify-end w-full col-span-2 md:col-span-4">
-                      <div className="text-sm flex items-center   hover:text-sky-500 cursor-pointer">
+                      <Link
+                        className="text-sm flex items-center   hover:text-sky-500 cursor-pointer"
+                        href={`/dashboard/reports/${id}`}
+                      >
                         <IconEye className="mr-2" />
                         <span className="hover:underline">Ver detalle</span>
-                      </div>
+                      </Link>
                     </div>
                   </div>
                 ))}

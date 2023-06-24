@@ -4,9 +4,10 @@ import Button from "../ui/Button/Button";
 interface Props {
   title?: string;
   children?: React.ReactNode;
-  onConfirm: () => void;
+  onConfirm?: () => void;
   confirmButtonText?: string;
-  showCancelButton: boolean;
+  showCancelButton?: boolean;
+  hideConfirmButton?: boolean;
   cancelButtonText?: string;
   onCancel?: () => void;
 }
@@ -18,6 +19,7 @@ const Modal = ({
   confirmButtonText = "Confirmar",
   showCancelButton,
   cancelButtonText = "Cancelar",
+  hideConfirmButton,
   onCancel,
 }: Props) => {
   return (
@@ -28,9 +30,11 @@ const Modal = ({
           <div>{children}</div>
         </div>
         <div className="flex flex-col mt-4">
-          <Button onClick={onConfirm} variant="danger">
-            {confirmButtonText}
-          </Button>
+          {!hideConfirmButton && (
+            <Button onClick={onConfirm} variant="danger">
+              {confirmButtonText}
+            </Button>
+          )}
           {showCancelButton && (
             <Button onClick={onCancel}>{cancelButtonText}</Button>
           )}
