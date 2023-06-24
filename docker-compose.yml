@@ -141,7 +141,7 @@ services:
     build: ./webserver-next
     environment:
       - NAME=WEBSERVER-NEXT
-    volumes:
+    # volumes:
      # - './webserver-next/prisma/dev.db:./prisma/dev.db'
     ports:
       - "3000:3000"
