@@ -36,11 +36,58 @@ export async function POST(request: Request) {
         },
       });
 
+      const html = `<link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+      <link
+        href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400&display=swap"
+        rel="stylesheet"
+      />
+      <div
+        style="
+          border: 1px solid #0ba5e9;
+          font-family: Rubik;
+          width: 400px;
+          padding: 1rem;
+          text-align: center;
+        "
+      >
+        <div style="margin-bottom: 1rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-engine-off" width="44" height="44" viewBox="0 0 24 24" stroke-width="1.5" stroke="#ff2825" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+              <path d="M3 10v6" />
+              <path d="M12 5v3" />
+              <path d="M10 5h4" />
+              <path d="M5 13h-2" />
+              <path d="M16 16h-1v2a1 1 0 0 1 -1 1h-3.465a1 1 0 0 1 -.832 -.445l-1.703 -2.555h-2v-6h2l.99 -.99m3.01 -1.01h1.382a1 1 0 0 1 .894 .553l1.448 2.894a1 1 0 0 0 .894 .553h1.382v-2h2a1 1 0 0 1 1 1v6" />
+              <path d="M3 3l18 18" />
+            </svg>
+            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+            <path d="M3 10v6" />
+            <path d="M12 5v3" />
+            <path d="M10 5h4" />
+            <path d="M5 13h-2" />
+            <path
+              d="M16 16h-1v2a1 1 0 0 1 -1 1h-3.465a1 1 0 0 1 -.832 -.445l-1.703 -2.555h-2v-6h2l.99 -.99m3.01 -1.01h1.382a1 1 0 0 1 .894 .553l1.448 2.894a1 1 0 0 0 .894 .553h1.382v-2h2a1 1 0 0 1 1 1v6"
+            />
+            <path d="M3 3l18 18" />
+          </svg>
+        </div>
+        <div style="font-weight: 400; margin-bottom: 1rem;">
+          Se ha detectado una falla en un sector.
+        </div>
+        <div style="font-weight: 400; margin-bottom: 1rem;">
+          Por favor, ingrese al siguiente <a href="${process.env.NEXT_API_URL}${DASHBOARD_REPORTS_PATH}/${savedMeasure?.id}">enlace</a> para obtener más
+          información de la misma.
+        </div>
+        <div style="font-weight: 400; margin-bottom: 1rem;">Muchas gracias.</div>
+      </div>
+      `;
+
       const mailOptions = {
         from: process.env.GMAIL_ACCOUNT,
         to: mailingList,
         subject: "Filtración encontrada",
-        html: `<a href="${process.env.NEXT_API_URL}${DASHBOARD_REPORTS_PATH}/${savedMeasure?.id}">Click para ver</a>`,
+        html,
       };
 
       transporter.sendMail(mailOptions, (error, info) => {

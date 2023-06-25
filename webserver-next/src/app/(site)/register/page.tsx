@@ -193,7 +193,7 @@ export default function Page() {
             >
               Iniciar sesión
             </Button>
-            <Button
+            {/* <Button
               variant="default"
               noPadding
               fullWidth
@@ -202,7 +202,7 @@ export default function Page() {
               }}
             >
               Recuperar contraseña
-            </Button>
+            </Button> */}
           </div>
         </div>
       </div>
