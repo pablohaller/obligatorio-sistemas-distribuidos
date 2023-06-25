@@ -219,7 +219,7 @@ services:
     depends_on:
       - sector-b
 
-   # Sector Sensor
+  # Sector Sensor
   sensor-3b:
     container_name: sensor-3b
     build: ./sensor
