@@ -1,10 +1,11 @@
 services:
 
 # Sector Server
-  sector-server-a:
+  sector-a:
+    container_name: sector-a
     build: ./sector-server
     environment:
-      - SECTOR_NAME=sector-server-a
+      - SECTOR_NAME=sector-a
       - QUEUE_HOST=queue1
       - QUEUE_NAME=queue1
       - COORDS=-34.91739651002616, -56.16210771871581;-34.91520592550176, -56.15995194170265;-34.915812960803784, -56.15930842617635;-34.91799473178162, -56.161485653707054
@@ -13,16 +14,17 @@ services:
         condition: service_healthy
 
 # Sector Sensor
-  sector-sensor-1a:
+  sensor-1a:
+    container_name: sensor-1a
     build: ./sensor
     environment:
-      - SECTOR_NAME=sector-server-a
+      - SECTOR_NAME=sector-a
       - SENSOR_NAME=sensor-1a
       - COORD=-34.91689987581042, -56.16092258868043
       - MIN_PRESSURE=6.9
       - INIT_PRESSURE=11.6
     depends_on:
-      - sector-server-a
+      - sector-a
 
 ###################################################################################################################
 
@@ -30,6 +32,7 @@ services:
 
   ## Server
   central-server:
+    container_name: central-server
     build: ./central-server
     links:
       - central-db
@@ -44,6 +47,7 @@ services:
 
   ## Central DB
   central-db:
+    container_name: central-db
     image: 'bitnami/postgresql:latest'
     ports:
       - '5432'
@@ -70,6 +74,7 @@ services:
 
   ## Server
   mirror-db-server:
+    container_name: mirror-db-server
     build: ./mirror-db-server
     links:
       - mirror-backup-db
@@ -83,6 +88,7 @@ services:
 
   ## Mirror Backup DB
   mirror-backup-db:
+    container_name: mirror-backup-db
     image: 'bitnami/postgresql:latest'
     ports:
       - '5432'
@@ -108,6 +114,7 @@ services:
 # RabbitMQ Queues
 
   queue1:
+    container_name: queue1
     image: rabbitmq:3-alpine
     healthcheck:
       test: rabbitmq-diagnostics -q ping
@@ -120,6 +127,7 @@ services:
       - "5672"
 
   queue2:
+    container_name: queue2
     image: rabbitmq:3-alpine
     healthcheck:
       test: rabbitmq-diagnostics -q ping
@@ -134,18 +142,20 @@ services:
 #####################################################################################################################
   
   batch:
-      build: ./batching
-      environment:
-        - POLLING-RATE=1
-        - WEB-SERVER-HOST=webserver-next
-        - MIRROR-DB-SERVER=mirror-db-server
-      ports:
-        - '8082:8080'
-      depends_on:
-        - "mirror-db-server"
-        - "webserver-next"
+    container_name: batch
+    build: ./batching
+    environment:
+      - POLLING-RATE=1
+      - WEB-SERVER-HOST=webserver-next
+      - MIRROR-DB-SERVER=mirror-db-server
+    ports:
+      - '8082:8080'
+    depends_on:
+      - "mirror-db-server"
+      - "webserver-next"
 
   webserver-next:
+    container_name: webserver-next
     build: ./webserver-next
     environment:
       - NAME=WEBSERVER-NEXT
@@ -159,48 +169,67 @@ services:
 
 # Proxy Server
   proxy-server:
-      build: ./proxy-server
-      depends_on:
-        - mirror-db-server
-        - central-server
-      ports:
-        - "8083:80"
+    container_name: proxy-server
+    build: ./proxy-server
+    depends_on:
+      - mirror-db-server
+      - central-server
+    ports:
+      - "8083:80"
 
 #####################################################################################################################
 #####################################################################################################################
 
 # Sector Server
-  sector-server-b:
+  sector-b:
+    container_name: sector-b
     build: ./sector-server
     environment:
-      - SECTOR_NAME=sector-server-b
+      - SECTOR_NAME=sector-b
       - QUEUE_HOST=queue2
       - QUEUE_NAME=queue2
-      - COORDS=-34.9165, -56.1615;-34.915, -56.1605;-34.916, -56.159
+      - COORDS=-34.887640, -56.160007;-34.888776, -56.161005;-34.889502, -56.160200;-34.889858, -56.159170;-34.888652, -56.158108
     depends_on:
       queue2:
         condition: service_healthy
 
   # Sector Sensor
   sensor-1b:
+    container_name: sensor-1b
     build: ./sensor
     environment:
-      - SECTOR_NAME=sector-server-b
+      - SECTOR_NAME=sector-b
       - SENSOR_NAME=sensor-1b
-      - COORD=-34.9159, -56.1607
+      - COORD=-34.888428, -56.159369
       - MIN_PRESSURE=7.2354
       - INIT_PRESSURE=11.5432
     depends_on:
-      - sector-server-b
+      - sector-b
 
   # Sector Sensor
   sensor-2b:
+    container_name: sensor-2b
     build: ./sensor
     environment:
-      - SECTOR_NAME=sector-server-b
+      - SECTOR_NAME=sector-b
       - SENSOR_NAME=sensor-2b
-      - COORD=-34.9163, -56.1601
-      - MIN_PRESSURE=7.15 
+      - COORD=-34.889150, -56.159916
+      - MIN_PRESSURE=7.11 
       - INIT_PRESSURE=12.21
     depends_on:
-      - sector-server-b
+      - sector-b
+
+   # Sector Sensor
+  sensor-3b:
+    container_name: sensor-3b
+    build: ./sensor
+    environment:
+      - SECTOR_NAME=sector-b
+      - SENSOR_NAME=sensor-3b
+      - COORD=-34.888160, -56.160388
+      - MIN_PRESSURE=7.05 
+      - INIT_PRESSURE=13.51
+    depends_on:
+      - sector-b
+
+
