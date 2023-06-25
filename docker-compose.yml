@@ -34,12 +34,8 @@ services:
     links:
       - central-db
     environment:
-      - QUEUE_HOST=queue1
-      - QUEUE_NAME=queue1
       - DB_CONN_STRING=postgresql://my_user:my_password@central-db:5432/central-db?sslmode=disable
     depends_on:
-      queue1:
-        condition: service_healthy
       central-db:
         condition: service_healthy
     ports:
@@ -123,6 +119,18 @@ services:
     expose:
       - "5672"
 
+  queue2:
+    image: rabbitmq:3-alpine
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    ports:
+      - "5673:5672"
+    expose:
+      - "5672"
+
 #####################################################################################################################
   
   batch:
@@ -161,14 +169,38 @@ services:
 #####################################################################################################################
 #####################################################################################################################
 
+# Sector Server
+  sector-server-b:
+    build: ./sector-server
+    environment:
+      - SECTOR_NAME=sector-server-b
+      - QUEUE_HOST=queue2
+      - QUEUE_NAME=queue2
+      - COORDS=-34.9165, -56.1615;-34.915, -56.1605;-34.916, -56.159
+    depends_on:
+      queue2:
+        condition: service_healthy
+
   # Sector Sensor
-  # sector-sensor-2a:
-  #   build: ./sensor
-  #   environment:
-  #     - SECTOR_NAME=sector-server-a
-  #     - SENSOR_NAME=sensor-2a
-  #     - COORD=-34.91689987581040, -56.16092258868040
-  #     - MIN_PRESSURE=7.3 
-  #     - INIT_PRESSURE=9.4
-  #   depends_on:
-  #     - sector-server-a
+  sensor-1b:
+    build: ./sensor
+    environment:
+      - SECTOR_NAME=sector-server-b
+      - SENSOR_NAME=sensor-1b
+      - COORD=-34.9159, -56.1607
+      - MIN_PRESSURE=7.2354
+      - INIT_PRESSURE=11.5432
+    depends_on:
+      - sector-server-b
+
+  # Sector Sensor
+  sensor-2b:
+    build: ./sensor
+    environment:
+      - SECTOR_NAME=sector-server-b
+      - SENSOR_NAME=sensor-2b
+      - COORD=-34.9163, -56.1601
+      - MIN_PRESSURE=7.15 
+      - INIT_PRESSURE=12.21
+    depends_on:
+      - sector-server-b
