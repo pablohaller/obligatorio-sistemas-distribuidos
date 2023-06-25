@@ -1,6 +1,5 @@
 import { IconEngine } from "@tabler/icons-react";
 import dynamic from "next/dynamic";
-import React, { useState } from "react";
 
 const SectorList = dynamic(
   () => import("@/app/components/SectorList/SectorList"),

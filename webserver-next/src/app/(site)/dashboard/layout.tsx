@@ -2,7 +2,6 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import SideBar from "@/app/components/SideBar/SideBar";
 import { getServerSession } from "next-auth";
 import { headers } from "next/headers";
-import React from "react";
 
 interface Props {
   children: React.ReactNode;

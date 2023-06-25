@@ -1,5 +1,5 @@
 import { IconEye } from "@tabler/icons-react";
-import React, { useRef } from "react";
+import { useRef } from "react";
 import { twMerge } from "tailwind-merge";
 
 interface Props {
@@ -21,7 +21,7 @@ const SectorListItem = ({ sector, isSelected, onClick }: Props) => {
     >
       <div>{sector}</div>
       <div
-        className="text-sm flex items-center   hover:text-sky-500 cursor-pointer"
+        className="text-sm flex items-center  hover:text-sky-500 cursor-pointer"
         onClick={() => {
           onClick();
           divRef?.current?.scrollIntoView({

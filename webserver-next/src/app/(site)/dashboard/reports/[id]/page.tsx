@@ -1,6 +1,7 @@
 import dynamic from "next/dynamic";
 import { DateTime } from "luxon";
 import { MeasureChartData } from "@/app/components/MeasureChart/MeasureChart";
+import prisma from "@/app/prisma/client";
 
 const Map = dynamic(() => import("@/app/components/Map/Map"), { ssr: false });
 const MeasureChart = dynamic(
@@ -12,7 +13,7 @@ interface Props {
   params: { id: string };
 }
 
-export const getData = async (payload: any) => {
+const getData = async (payload: any) => {
   const request = await fetch(`${process.env.NEXT_NGINX_API_URI}/Alert`, {
     method: "POST",
     headers: {
@@ -24,7 +25,7 @@ export const getData = async (payload: any) => {
   return request.json();
 };
 
-export const getMapData = async (payload: any) => {
+const getMapData = async (payload: any) => {
   const request = await fetch(`${process.env.NEXT_NGINX_API_URI}/MapReport`, {
     method: "POST",
     headers: {
@@ -37,7 +38,7 @@ export const getMapData = async (payload: any) => {
 };
 
 const Page = async ({ params }: Props) => {
-  const measure = await client.measures.findUnique({
+  const measure = await prisma.measures.findUnique({
     where: {
       id: params?.id,
     },

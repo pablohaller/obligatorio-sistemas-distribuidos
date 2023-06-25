@@ -1,6 +1,4 @@
-import React from "react";
-import LoadingSpinner from "./components/LoadingSpinner/LoadingSpinner";
-import { IconCircleCheck, IconCircleX } from "@tabler/icons-react";
+import { IconCircleX } from "@tabler/icons-react";
 import Link from "next/link";
 
 const Page = () => {

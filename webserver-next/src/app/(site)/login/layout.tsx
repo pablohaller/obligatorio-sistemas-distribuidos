@@ -2,7 +2,6 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { DASHBOARD_PATH } from "@/app/constants/routes";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import React from "react";
 
 interface Props {
   children: React.ReactNode;

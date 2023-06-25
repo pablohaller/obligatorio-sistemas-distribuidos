@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DateTime } from "luxon";
 import SectorListItem from "./SectorListItem";
 import LoadingSpinner from "../LoadingSpinner/LoadingSpinner";

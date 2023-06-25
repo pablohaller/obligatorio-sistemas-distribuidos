@@ -1,14 +1,14 @@
 import NextAuth from "next-auth/next";
 import CredentialsProvider from "next-auth/providers/credentials";
-import client from "@/app/prisma/client";
 import bcrypt from "bcrypt";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { SessionStrategy } from "next-auth";
+import prisma from "@/app/prisma/client";
 
 const jwt: SessionStrategy = "jwt";
 
 export const authOptions = {
-  adapter: PrismaAdapter(client),
+  adapter: PrismaAdapter(prisma),
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -26,7 +26,7 @@ export const authOptions = {
           throw new Error("Ingrese usuario y contraseña");
         }
 
-        const user = await client.users.findFirst({
+        const user = await prisma.users.findFirst({
           where: {
             email: credentials?.email,
           },

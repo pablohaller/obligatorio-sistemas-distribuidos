@@ -1,13 +1,12 @@
-import LoadingSpinner from "@/app/components/LoadingSpinner/LoadingSpinner";
 import MeasuresList from "@/app/components/MeasuresList/MeasuresList";
+import prisma from "@/app/prisma/client";
 import { IconReport } from "@tabler/icons-react";
-import React from "react";
 
 const Page = async () => {
-  const measures = await client.measures.findMany({
+  const measures = await prisma.measures.findMany({
     where: {
-      isActive: true
-    }
+      isActive: true,
+    },
   });
 
   return (

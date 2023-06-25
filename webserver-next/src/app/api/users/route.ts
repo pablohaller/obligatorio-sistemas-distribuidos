@@ -1,9 +1,9 @@
-import client from "@/app/prisma/client";
+import prisma from "@/app/prisma/client";
 import bcrypt from "bcrypt";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET() {
-  const users = await client.users.findMany();
+  const users = await prisma.users.findMany();
   return NextResponse.json(users);
 }
 
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Faltan campos" }, { status: 400 });
     }
 
-    const exist = await client.users.findFirst({
+    const exist = await prisma.users.findFirst({
       where: {
         email,
       },
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await client.users.create({
+    const user = await prisma.users.create({
       data: {
         email,
         name,

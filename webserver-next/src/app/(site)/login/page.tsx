@@ -44,7 +44,7 @@ export default function Page() {
         router.push(DASHBOARD_PATH);
       }
     }
-  }, [session]);
+  }, [session, successMessage, router]);
 
   const handleLogin = async () => {
     setLoading(true);

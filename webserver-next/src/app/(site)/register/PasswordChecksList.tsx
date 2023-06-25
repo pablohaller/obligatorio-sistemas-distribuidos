@@ -3,7 +3,6 @@ import {
   IconCircleDotted,
   IconCircleX,
 } from "@tabler/icons-react";
-import React from "react";
 import { PasswordChecks } from "./helpers";
 
 const getIcon = (checkState: boolean | undefined) => {

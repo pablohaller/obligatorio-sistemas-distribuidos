@@ -1,5 +1,5 @@
 import { DASHBOARD_REPORTS_PATH } from "@/app/constants/routes";
-import client from "@/app/prisma/client";
+import prisma from "@/app/prisma/client";
 import { Users } from "@prisma/client";
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
@@ -10,7 +10,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const { data, filtration } = await request.json();
-  const savedMeasure = await client.measures.create({
+  const savedMeasure = await prisma.measures.create({
     data: {
       data,
       filtration,
@@ -63,14 +63,14 @@ export async function DELETE(request: Request) {
   const id = searchParams.get("id");
   let response: any = {};
   if (id) {
-    const measure = await client.measures.findUnique({
+    const measure = await prisma.measures.findUnique({
       where: {
         id,
       },
     });
     if (measure) {
       if (measure?.isActive) {
-        const updatedMeasure = await client.measures.update({
+        const updatedMeasure = await prisma.measures.update({
           where: {
             id,
           },

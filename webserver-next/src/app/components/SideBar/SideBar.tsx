@@ -1,6 +1,7 @@
 "use client";
 import {
   IconEngine,
+  IconHome,
   IconLogout,
   IconMap,
   IconMenu2,
@@ -10,27 +11,36 @@ import {
 } from "@tabler/icons-react";
 import { Session } from "next-auth";
 import { signOut } from "next-auth/react";
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Modal from "../modal/modal";
 import Link from "next/link";
 import { twMerge } from "tailwind-merge";
 import { usePathname } from "next/navigation";
 import LoadingSpinner from "../LoadingSpinner/LoadingSpinner";
+import {
+  DASHBOARD_MAP_PATH,
+  DASHBOARD_MEASUREMENTS_PATH,
+  DASHBOARD_PATH,
+  DASHBOARD_REPORTS_PATH,
+} from "@/app/constants/routes";
 
 interface Props {
   session: Session | null;
 }
 
 interface ActivePathname {
+  isHomeActive: boolean;
   isReportActive: boolean;
   isMapActive: boolean;
   isMeasurementsActive: boolean;
 }
 
 const getActivePathName = (pathname: string | undefined): ActivePathname => ({
-  isReportActive: pathname?.includes("/dashboard/reports") || false,
-  isMapActive: pathname?.includes("/dashboard/map") || false,
-  isMeasurementsActive: pathname?.includes("/dashboard/measurements") || false,
+  isHomeActive: pathname === DASHBOARD_PATH || false,
+  isReportActive: pathname?.includes(DASHBOARD_REPORTS_PATH) || false,
+  isMapActive: pathname?.includes(DASHBOARD_MAP_PATH) || false,
+  isMeasurementsActive:
+    pathname?.includes(DASHBOARD_MEASUREMENTS_PATH) || false,
 });
 
 const SideBar = ({ session }: Props) => {
@@ -59,7 +69,8 @@ const SideBar = ({ session }: Props) => {
     setActivePathname(getActivePathName(clientPathName));
   }, [clientPathName]);
 
-  const { isReportActive, isMapActive, isMeasurementsActive } = activePathname;
+  const { isReportActive, isMapActive, isMeasurementsActive, isHomeActive } =
+    activePathname;
 
   return (
     <>
@@ -91,7 +102,7 @@ const SideBar = ({ session }: Props) => {
         </div>
         <div
           className={twMerge(
-            "p-2 font-rubik h-screen md:h-0 absolute w-full md:bg-transparent  bg-white/90 shadow-2xl backdrop-blur-md md:bg-none md:backdrop-blur-none md:shadow-none",
+            "z-10 p-2 font-rubik h-screen md:h-0 absolute w-full md:bg-transparent  bg-white/90 shadow-2xl backdrop-blur-md md:bg-none md:backdrop-blur-none md:shadow-none",
             !showMobileMenu && "hidden md:block",
             showMobileMenu && "h-screen md:h-0"
           )}
@@ -99,10 +110,21 @@ const SideBar = ({ session }: Props) => {
           <Link
             className={twMerge(
               "p-4 flex items-center hover:text-sky-400",
+              isHomeActive &&
+                "text-sky-500  bg-sky-100 rounded-xl hover:text-sky-500"
+            )}
+            href={DASHBOARD_PATH}
+          >
+            <IconHome className="mr-2" />
+            <span>Inicio</span>
+          </Link>
+          <Link
+            className={twMerge(
+              "p-4 flex items-center hover:text-sky-400",
               isMapActive &&
                 "text-sky-500  bg-sky-100 rounded-xl hover:text-sky-500"
             )}
-            href="/dashboard/map"
+            href={DASHBOARD_MAP_PATH}
           >
             <IconMap className="mr-2" />
             <span>Mapa</span>
@@ -113,7 +135,7 @@ const SideBar = ({ session }: Props) => {
               isReportActive &&
                 "text-sky-500 bg-sky-100 rounded-xl  hover:text-sky-500"
             )}
-            href="/dashboard/reports"
+            href={DASHBOARD_REPORTS_PATH}
           >
             <IconReport className="mr-2" />
             <span>Reportes</span>
@@ -124,7 +146,7 @@ const SideBar = ({ session }: Props) => {
               isMeasurementsActive &&
                 "text-sky-500 bg-sky-100 rounded-xl  hover:text-sky-500"
             )}
-            href="/dashboard/measurements"
+            href={DASHBOARD_MEASUREMENTS_PATH}
           >
             <IconEngine className="mr-2 flex-shrink-0" />
             <span>Mediciones</span>

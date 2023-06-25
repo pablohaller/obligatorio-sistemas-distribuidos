@@ -17,6 +17,7 @@ RUN npm install @prisma/client
 
 COPY . .
 RUN npx prisma generate --schema ./prisma/schema.prisma
+RUN npm run build
 # start app
 EXPOSE 3000 5555
-CMD [ "npm", "run", "dev:prisma" ] 
+CMD [ "npm", "run", "start" ] 

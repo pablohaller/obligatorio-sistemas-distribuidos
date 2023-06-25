@@ -1,4 +1,5 @@
 "use client";
+import { DASHBOARD_REPORTS_PATH } from "@/app/constants/routes";
 import { Measures } from "@prisma/client";
 import {
   IconArrowRight,
@@ -8,8 +9,7 @@ import {
 } from "@tabler/icons-react";
 import { DateTime } from "luxon";
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
-import { toast } from "react-toastify";
+import { useState } from "react";
 
 interface Props {
   measures: Measures[];
@@ -18,6 +18,14 @@ interface Props {
 const MeasuresList = ({ measures }: Props) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<boolean>(false);
+
+  if (measures?.length === 0) {
+    return (
+      <div className="grid place-items-center w-full h-full">
+        No hay reportes para mostrar
+      </div>
+    );
+  }
 
   return (
     <div className="p-2">
@@ -82,7 +90,7 @@ const MeasuresList = ({ measures }: Props) => {
                     <div className="flex justify-end w-full col-span-2 md:col-span-4">
                       <Link
                         className="text-sm flex items-center   hover:text-sky-500 cursor-pointer"
-                        href={`/dashboard/reports/${id}`}
+                        href={`${DASHBOARD_REPORTS_PATH}/${id}`}
                       >
                         <IconEye className="mr-2" />
                         <span className="hover:underline">Ver detalle</span>
