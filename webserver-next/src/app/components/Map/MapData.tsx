@@ -13,12 +13,6 @@ const MapData = () => {
     load: () => {
       console.log("Map loaded");
     },
-    // click: () => {
-    //   map.locate();
-    // },
-    // locationfound: (location) => {
-    //   console.log("location found:", location);
-    // },
   });
   return null;
 };

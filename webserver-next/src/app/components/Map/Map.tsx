@@ -30,7 +30,6 @@ const Map = ({ sectors, mapReport }: Props) => {
         pathOptions: { color: "red" },
       });
       sectors?.sensors?.forEach(({ sensor, coord }) => {
-        console.log("sensor", sensor);
         mapSensors.push({
           sensor,
           coords: coord?.split(",")?.map((unit) => parseFloat(unit)),
