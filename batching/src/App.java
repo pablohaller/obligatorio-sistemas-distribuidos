@@ -35,6 +35,9 @@ public class App {
     private static String webServer = System.getenv("WEB-SERVER-HOST");
     public static void main(String[] args) throws Exception {
         pollingRate =  Integer.valueOf(System.getenv("POLLING-RATE"));
+        // Matar reports viejos.
+        deleteTrashReports();
+        
         while (true) {
             List<Measurement> alerts = getAlerts();
             if(!alerts.isEmpty()){
@@ -326,6 +329,35 @@ public class App {
         return filterList;
     }
 
+    public static void deleteTrashReports(){
+        int initBackoff = 2;
+        int maxBackoff = 20;
+        int retries = 0;
+        Random r = new Random();
+        while (true) {
+            try {
+                URL url = new URL("http://" + webServer + ":3000/api/measures");
+                System.out.println(url);
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("DELETE");
+                connection.setRequestProperty("Content-Type", "application/json");
+                
+                int responseCode = connection.getResponseCode(); 
+                System.out.println("Response Code: " + responseCode);
+                if (responseCode == 200) {
+                    break;
+                }
+                
+                retries++;
+                double random = Math.min(maxBackoff, initBackoff * Math.pow(2, retries));
+                Thread.sleep(1000 * r.nextInt((int)random + 1));
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+            
+        }
+    }
+
 
     public static void sendRemoveReport(String id){ 
         int initBackoff = 2;
@@ -343,8 +375,8 @@ public class App {
                 // Open a connection to the URL
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
-                // Set the request method to POST
-                connection.setRequestMethod("DELETE");
+                // Set the request method to PUT
+                connection.setRequestMethod("PUT");
 
                 // Optional: Set request headers
                 connection.setRequestProperty("Content-Type", "application/json");

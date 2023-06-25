@@ -52,6 +52,7 @@ services:
     ports:
       - '5432'
     volumes:
+      - './central-db/data:/bitnami/postgresql'
       - './central-db/init.sql:/docker-entrypoint-initdb.d/init.sql'
     environment:
       - POSTGRESQL_REPLICATION_MODE=master

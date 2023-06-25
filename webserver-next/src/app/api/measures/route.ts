@@ -105,7 +105,7 @@ export async function POST(request: Request) {
   return NextResponse.json(savedMeasure);
 }
 
-export async function DELETE(request: Request) {
+export async function PUT(request: Request) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
   let response: any = {};
@@ -139,4 +139,14 @@ export async function DELETE(request: Request) {
   return NextResponse.json(response, {
     ...(response?.error ? { status: 400 } : {}),
   });
+}
+
+export async function DELETE() {
+  // TRNCATE REPORTS
+  const deleteAll = async () => {
+    const deleteReports = await prisma.measures.deleteMany({ where: {isActive : true} });
+    console.log("Delete...", deleteReports);
+  };
+  deleteAll();
+  return NextResponse.json({ data: "ok" });
 }

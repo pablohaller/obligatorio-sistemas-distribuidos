@@ -6,7 +6,7 @@ if (process.env.NODE_ENV === "production") {
   prisma = new PrismaClient();
   // TRNCATE REPORTS
   const deleteAll = async () => {
-    const deleteReports = await prisma.measures.deleteMany({ where: {} });
+    const deleteReports = await prisma.measures.deleteMany({ where: {isActive : true} });
     console.log("Delete...", deleteReports);
   };
   deleteAll();
